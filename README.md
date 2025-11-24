@@ -99,15 +99,7 @@ wechat-activation-manager/
 
 ## 📚 文档导航
 
-| 文档 | 说明 |
-|------|------|
-| [README.md](./README.md) | 项目概览（本文件） |
-| [INSTALLATION.md](./INSTALLATION.md) | 安装与配置指南 |
-| [USAGE_GUIDE.md](./USAGE_GUIDE.md) | 功能使用指南 |
-| [DEPLOYMENT.md](./DEPLOYMENT.md) | 部署指南 |
-| [DOCUMENTATION.md](./DOCUMENTATION.md) | 文档导航索引 |
-| [CONTRIBUTING.md](./CONTRIBUTING.md) | 贡献指南 |
-| [LICENSE](./LICENSE) | MIT 许可证 |
+[📖 README](./README.md) | [⚙️ 安装配置](./INSTALLATION.md) | [📋 使用指南](./USAGE_GUIDE.md) | [🚀 部署指南](./DEPLOYMENT.md) | [📑 文档索引](./DOCUMENTATION.md) | [🤝 贡献指南](./CONTRIBUTING.md) | [📄 许可证](./LICENSE)
 
 ---
 
@@ -155,4 +147,3 @@ MIT License - 详见 [LICENSE](./LICENSE)
 **开发者**: 徐大兵  
 **最后更新**: 2025年11月24日  
 **GitHub**: [wechat-activation-manager](https://github.com/your-username/wechat-activation-manager)
-
