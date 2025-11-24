@@ -26,7 +26,7 @@
 
 ```bash
 # 1. 克隆项目
-git clone https://github.com/your-username/wechat-activation-manager.git
+git clone https://github.com/xbrooke/WeChatActivationManager.git
 cd wechat-activation-manager
 
 # 2. 安装依赖
