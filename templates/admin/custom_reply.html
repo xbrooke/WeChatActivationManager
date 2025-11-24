@@ -1,0 +1,514 @@
+{% extends "admin/layout.html" %}
+
+{% block page_title %}自定义回复{% endblock %}
+
+{% block page_content %}
+<style>
+    /* 字段样式规范 */
+    .field-label {
+        @apply text-xs font-semibold text-gray-600 uppercase tracking-wider;
+    }
+    .field-value {
+        @apply text-sm text-gray-900 font-medium;
+    }
+    .field-box {
+        @apply p-3 rounded-lg border border-gray-200 bg-gray-50;
+    }
+    .field-box.highlight {
+        @apply border-blue-200 bg-blue-50;
+    }
+    .field-box.success {
+        @apply border-green-200 bg-green-50;
+    }
+    .field-box.error {
+        @apply border-red-200 bg-red-50;
+    }
+    .method-badge {
+        @apply px-2 py-1 rounded text-xs font-semibold;
+    }
+    .method-badge.get {
+        @apply bg-blue-100 text-blue-800;
+    }
+    .method-badge.post {
+        @apply bg-green-100 text-green-800;
+    }
+    .method-badge.put {
+        @apply bg-yellow-100 text-yellow-800;
+    }
+    .method-badge.delete {
+        @apply bg-red-100 text-red-800;
+    }
+    .api-path {
+        @apply font-mono text-xs text-gray-700 bg-gray-100 px-2 py-1 rounded;
+    }
+    .field-row {
+        @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4;
+    }
+</style>
+
+<div class="space-y-6" x-data="customReplyData()">
+    <!-- 页面标题 -->
+    <div class="fade-in">
+        <h1 class="text-2xl font-bold text-gray-800">自定义回复</h1>
+        <p class="text-gray-500 mt-1">配置关键词匹配和自动回复规则</p>
+    </div>
+    
+    <!-- 操作栏 -->
+    <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 fade-in">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div class="relative">
+                <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">
+                    <i class="fas fa-search"></i>
+                </span>
+                <input
+                    type="text"
+                    x-model="searchTerm"
+                    @input="filterReplies()"
+                    placeholder="搜索关键词..."
+                    class="block w-full md:w-72 pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                />
+            </div>
+            
+            <button 
+                @click="showAddModal = true"
+                class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-200 flex items-center">
+                <i class="fas fa-plus mr-2"></i>添加回复规则
+            </button>
+        </div>
+    </div>
+    
+    <!-- 回复规则表格 -->
+    <div class="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100 fade-in">
+        <template x-if="loading">
+            <div class="p-12 text-center">
+                <div class="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+                <p class="mt-4 text-gray-500">加载中...</p>
+            </div>
+        </template>
+        
+        <template x-if="!loading && filteredReplies.length === 0">
+            <div class="p-12 text-center">
+                <div class="text-6xl mb-4 text-blue-300">
+                    <i class="fas fa-comment-dots"></i>
+                </div>
+                <p class="text-lg text-gray-500">暂无回复规则</p>
+                <button 
+                    @click="showAddModal = true"
+                    class="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center mx-auto">
+                    <i class="fas fa-plus mr-2"></i>添加回复规则
+                </button>
+            </div>
+        </template>
+        
+        <template x-if="!loading && filteredReplies.length > 0">
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <i class="fas fa-key mr-2"></i>关键词
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <i class="fas fa-search mr-2"></i>匹配方式
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <i class="fas fa-reply mr-2"></i>回复类型 & 内容
+                            </th>
+                            <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <i class="fas fa-arrow-up mr-2"></i>优先级
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <i class="fas fa-toggle-on mr-2"></i>状态
+                            </th>
+                            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        <template x-for="reply in filteredReplies" :key="reply.id">
+                            <tr class="hover:bg-gray-50 transition-colors duration-200">
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="inline-block px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-semibold" x-text="reply.keyword"></span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                    <span class="method-badge" :class="reply.match_type === 'exact' ? 'post' : 'put'" x-text="reply.match_type === 'exact' ? '精确匹配' : '包含匹配'"></span>
+                                </td>
+                                <td class="px-6 py-4 text-sm text-gray-900">
+                                    <div class="flex items-center gap-2">
+                                        <span :class="reply.reply_type === 'text' ? 'bg-green-100 text-green-800' : reply.reply_type === 'image' ? 'bg-purple-100 text-purple-800' : 'bg-cyan-100 text-cyan-800'" class="px-2 py-1 rounded text-xs font-medium" :x-text="reply.reply_type === 'text' ? '文本' : reply.reply_type === 'image' ? '图片' : '图文'"></span>
+                                        <span class="max-w-xs truncate text-gray-700" x-text="reply.reply_type === 'news' ? (function() { try { const data = JSON.parse(reply.reply_content); return data.title || '(无标题)'; } catch(e) { return '(格式错误)'; } })() : reply.reply_content"></span>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-center">
+                                    <span class="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full font-semibold text-sm" x-text="reply.priority"></span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span :class="reply.enabled ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'" class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full" x-text="reply.enabled ? '启用' : '禁用'"></span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                    <div class="flex justify-end space-x-2">
+                                        <button 
+                                            @click="editReply(reply)"
+                                            class="text-blue-600 hover:text-blue-900 transition-colors duration-200 p-1"
+                                            title="编辑">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button 
+                                            @click="toggleReply(reply.id)"
+                                            class="text-purple-600 hover:text-purple-900 transition-colors duration-200 p-1"
+                                            title="切换状态">
+                                            <i class="fas fa-toggle-on"></i>
+                                        </button>
+                                        <button 
+                                            @click="deleteReply(reply.id)"
+                                            class="text-red-600 hover:text-red-900 transition-colors duration-200 p-1"
+                                            title="删除">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+        </template>
+    </div>
+    
+    <!-- 添加/编辑弹窗 -->
+    <template x-if="showAddModal">
+        <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50" @click.self="showAddModal = false">
+            <div class="bg-white rounded-xl shadow-lg p-6 w-full max-w-2xl">
+                <h3 class="text-lg font-semibold mb-4 text-gray-800" x-text="formData.id ? '编辑回复规则' : '添加回复规则'"></h3>
+                
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">关键词</label>
+                        <input 
+                            type="text" 
+                            x-model="formData.keyword"
+                            placeholder="输入关键词"
+                            class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                        />
+                    </div>
+                    
+                    <div class="grid grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">匹配方式</label>
+                            <select 
+                                x-model="formData.match_type"
+                                class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200">
+                                <option value="exact">精确匹配</option>
+                                <option value="contains">包含匹配</option>
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">回复类型</label>
+                            <select 
+                                x-model="formData.reply_type"
+                                class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200">
+                                <option value="text">文本</option>
+                                <option value="image">图片</option>
+                                <option value="news">图文</option>
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">优先级</label>
+                            <input 
+                                type="number" 
+                                x-model.number="formData.priority"
+                                min="0"
+                                max="100"
+                                placeholder="0-100，越高优先级越高"
+                                class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                            />
+                            <small class="text-gray-500 mt-1">默认值：50</small>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">回复内容</label>
+                        <template x-if="formData.reply_type === 'news'">
+                            <div class="space-y-4">
+                                <!-- 标题 -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-600 mb-1">
+                                        <span class="text-red-500">*</span> 文章标题（必填）
+                                    </label>
+                                    <input 
+                                        type="text" 
+                                        x-model="formData.news_title"
+                                        placeholder="输入文章标题，如：微信开发最佳实践"
+                                        class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                                    />
+                                </div>
+                                
+                                <!-- 描述 -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-600 mb-1">
+                                        文章描述/摘要（可选）
+                                    </label>
+                                    <textarea 
+                                        x-model="formData.news_description"
+                                        placeholder="输入文章摘要或简短描述，如：学习如何开发优秀的微信应用"
+                                        rows="2"
+                                        class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"></textarea>
+                                </div>
+                                
+                                <!-- 缩略图URL -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-600 mb-1">
+                                        缩略图URL（可选）
+                                    </label>
+                                    <input 
+                                        type="text" 
+                                        x-model="formData.news_picUrl"
+                                        placeholder="输入图片URL，如：https://example.com/image.jpg"
+                                        class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                                    />
+                                    <p class="text-xs text-gray-500 mt-1">💡 支持HTTPS的公网图片链接</p>
+                                </div>
+                                
+                                <!-- 跳转链接 -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-600 mb-1">
+                                        点击后跳转的链接（可选）
+                                    </label>
+                                    <input 
+                                        type="text" 
+                                        x-model="formData.news_url"
+                                        placeholder="输入点击图文后跳转的网址，如：https://example.com/article/123"
+                                        class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                                    />
+                                    <p class="text-xs text-gray-500 mt-1">💡 可以是外部网址或小程序链接</p>
+                                </div>
+                                
+                                <!-- 预览 -->
+                                <div class="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                                    <p class="text-xs font-semibold text-gray-600 mb-2">📱 微信预览效果：</p>
+                                    <div class="bg-white border border-gray-300 rounded p-2 text-xs">
+                                        <p class="font-semibold text-gray-800 truncate" x-text="formData.news_title || '(输入标题后显示)'"></p>
+                                        <p class="text-gray-600 text-xs mt-1 line-clamp-2" x-text="formData.news_description || '(输入描述后显示)'"></p>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+                        <template x-if="formData.reply_type !== 'news'">
+                            <textarea 
+                                x-model="formData.reply_content"
+                                placeholder="输入回复内容"
+                                rows="4"
+                                class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"></textarea>
+                        </template>
+                    </div>
+                    
+                    <div class="flex items-center">
+                        <input 
+                            type="checkbox" 
+                            x-model="formData.enabled"
+                            id="enableToggle"
+                            class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                        />
+                        <label for="enableToggle" class="ml-2 block text-sm text-gray-700">启用此规则</label>
+                    </div>
+                    
+                    <div class="pt-4 flex justify-end space-x-3">
+                        <button 
+                            @click="showAddModal = false"
+                            class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-all duration-200">
+                            取消
+                        </button>
+                        <button 
+                            @click="saveReply()"
+                            class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-200"
+                            x-text="formData.id ? '更新' : '保存'"></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
+</div>
+
+<script>
+function customReplyData() {
+    return {
+        replies: [],
+        filteredReplies: [],
+        searchTerm: '',
+        loading: true,
+        showAddModal: false,
+        formData: {
+            keyword: '',
+            match_type: 'exact',
+            reply_type: 'text',
+            reply_content: '',
+            priority: 50,
+            enabled: true,
+            news_title: '',
+            news_description: '',
+            news_picUrl: '',
+            news_url: ''
+        },
+        
+        async loadReplies() {
+            try {
+                const timestamp = new Date().getTime();
+                const response = await fetch(`/api/replies?t=${timestamp}`, {
+                    cache: 'no-store',
+                    headers: {
+                        'Cache-Control': 'no-cache, no-store, max-age=0'
+                    }
+                });
+                this.replies = await response.json();
+                this.filterReplies();
+                this.loading = false;
+            } catch (error) {
+                console.error('加载回复规则失败:', error);
+                window.showToast('加载失败，请重试', 'error');
+                this.loading = false;
+            }
+        },
+        
+        filterReplies() {
+            this.filteredReplies = this.replies.filter(reply => 
+                reply.keyword.includes(this.searchTerm) || 
+                reply.reply_content.includes(this.searchTerm)
+            );
+        },
+        
+        async saveReply() {
+            if (!this.formData.keyword) {
+                window.showToast('请填写关键词', 'error');
+                return;
+            }
+            
+            // 图文消息验证
+            if (this.formData.reply_type === 'news') {
+                if (!this.formData.news_title) {
+                    window.showToast('请填写文章标题', 'error');
+                    return;
+                }
+                // 将图文字段组装成JSON
+                const newsData = {
+                    title: this.formData.news_title,
+                    description: this.formData.news_description || '',
+                    picUrl: this.formData.news_picUrl || '',
+                    url: this.formData.news_url || ''
+                };
+                this.formData.reply_content = JSON.stringify(newsData, null, 2);
+            } else {
+                if (!this.formData.reply_content) {
+                    window.showToast('请填写回复内容', 'error');
+                    return;
+                }
+            }
+            
+            try {
+                const payload = {
+                    id: this.formData.id,
+                    keyword: this.formData.keyword,
+                    matchType: this.formData.match_type,
+                    replyType: this.formData.reply_type,
+                    replyContent: this.formData.reply_content,
+                    priority: this.formData.priority,
+                    enabled: this.formData.enabled
+                };
+                
+                const response = await fetch('/api/replies', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const result = await response.json();
+                
+                if (result && result.success === true) {
+                    window.showToast('规则已保存', 'success');
+                    this.showAddModal = false;
+                    console.log('[DEBUG] saveReply success, reloading...');
+                    setTimeout(() => window.location.reload(true), 800);
+                } else {
+                    window.showToast(result?.message || '保存失败', 'error');
+                }
+            } catch (error) {
+                console.error('保存失败:', error);
+                window.showToast('保存失败，请重试', 'error');
+            }
+        },
+        
+        deleteReply(id) {
+            if (confirm('确定要删除这条规则吗？')) {
+                fetch(`/api/replies/${id}`, {
+                    method: 'DELETE'
+                })
+                .then(response => {
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                    window.showToast('规则已删除', 'success');
+                    console.log('[DEBUG] deleteReply success, reloading...');
+                    setTimeout(() => window.location.reload(true), 800);
+                })
+                .catch(error => {
+                    console.error('删除失败:', error);
+                    window.showToast('删除失败，请重试', 'error');
+                });
+            }
+        },
+        
+        toggleReply(id) {
+            fetch(`/api/replies/${id}/toggle`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' }
+            })
+            .then(response => {
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                window.showToast('状态已更新', 'success');
+                console.log('[DEBUG] toggleReply success, reloading...');
+                setTimeout(() => window.location.reload(true), 800);
+            })
+            .catch(error => {
+                console.error('更新失败:', error);
+                window.showToast('更新失败，请重试', 'error');
+            });
+        },
+        
+        editReply(reply) {
+            this.formData = { ...reply };
+            // 如果是图文消息，解析JSON到各个字段
+            if (reply.reply_type === 'news') {
+                try {
+                    const newsData = JSON.parse(reply.reply_content);
+                    this.formData.news_title = newsData.title || '';
+                    this.formData.news_description = newsData.description || '';
+                    this.formData.news_picUrl = newsData.picUrl || '';
+                    this.formData.news_url = newsData.url || '';
+                } catch (e) {
+                    console.error('解析图文数据失败:', e);
+                }
+            }
+            this.showAddModal = true;
+        },
+        
+        resetForm() {
+            this.formData = {
+                keyword: '',
+                match_type: 'exact',
+                reply_type: 'text',
+                reply_content: '',
+                priority: 50,
+                enabled: true,
+                news_title: '',
+                news_description: '',
+                news_picUrl: '',
+                news_url: ''
+            };
+        },
+        
+        init() {
+            this.loadReplies();
+        }
+    }
+}
+</script>
+{% endblock %}

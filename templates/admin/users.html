@@ -1,0 +1,591 @@
+{% extends "admin/layout.html" %}
+
+{% block page_title %}用户管理{% endblock %}
+
+{% block page_content %}
+<div class="space-y-6" x-data="usersData()">
+    <!-- 页面标题 -->
+    <div class="fade-in">
+        <h1 class="text-2xl font-bold text-gray-800">用户管理</h1>
+        <p class="text-gray-500 mt-1">管理微信公众号用户及其激活状态</p>
+    </div>
+    
+    <!-- 操作栏 -->
+    <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 fade-in">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div class="relative">
+                <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">
+                    <i class="fas fa-search"></i>
+                </span>
+                <input
+                    type="text"
+                    x-model="searchTerm"
+                    @input="filterUsers()"
+                    placeholder="搜索用户昵称、OpenID或激活码..."
+                    class="block w-full md:w-72 pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                />
+            </div>
+            
+            <div class="flex flex-wrap gap-3">
+                <select 
+                    x-model="statusFilter"
+                    @change="filterUsers()"
+                    class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200">
+                    <option value="all">全部状态</option>
+                    <option value="none">未获取</option>
+                    <option value="pending">待激活</option>
+                    <option value="activated">已激活</option>
+                </select>
+                
+                <button 
+                    @click="syncWechatInfo()" 
+                    :disabled="syncing"
+                    :class="syncing ? 'bg-blue-400 cursor-wait' : 'bg-blue-600 hover:bg-blue-700'"
+                    class="px-4 py-2 text-white rounded-lg transition-all duration-200 flex items-center">
+                    <i :class="syncing ? 'fas fa-spinner fa-spin' : 'fas fa-sync'" class="mr-2"></i>
+                    <span x-text="syncing ? '同步中...' : '同步微信用户'"></span>
+                </button>
+                
+                <button 
+                    @click="batchDeleteMode = !batchDeleteMode"
+                    :class="batchDeleteMode ? 'bg-purple-600 hover:bg-purple-700' : 'bg-gray-600 hover:bg-gray-700'"
+                    class="px-4 py-2 text-white rounded-lg transition-all duration-200 flex items-center">
+                    <i class="fas fa-trash-alt mr-2"></i><span x-text="batchDeleteMode ? '取消选择' : '批量删除'"></span>
+                </button>
+                
+                <button 
+                    @click="deleteSelectedUsers()"
+                    x-show="batchDeleteMode && selectedUsers.length > 0"
+                    class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all duration-200 flex items-center">
+                    <i class="fas fa-trash mr-2"></i><span x-text="'删除(' + selectedUsers.length + ')'"></span>
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 数据表格 -->
+    <div class="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100 fade-in">
+        <template x-if="loading">
+            <div class="p-12 text-center">
+                <div class="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+                <p class="mt-4 text-gray-500">加载中...</p>
+            </div>
+        </template>
+        
+        <template x-if="!loading && filteredUsers.length === 0">
+            <div class="p-12 text-center">
+                <div class="text-6xl mb-4 text-blue-300">
+                    <i class="fas fa-users"></i>
+                </div>
+                <p class="text-lg text-gray-500">没有找到匹配的用户</p>
+            </div>
+        </template>
+        
+        <template x-if="!loading && filteredUsers.length > 0">
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th x-show="batchDeleteMode" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <input 
+                                    type="checkbox" 
+                                    @change="toggleSelectAllUsers()"
+                                    :checked="selectedUsers.length === filteredUsers.length && filteredUsers.length > 0"
+                                    class="rounded border-gray-300"
+                                />
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">用户信息</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">关注时间</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">激活码</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">激活状态</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">最后登录</th>
+                            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        <template x-for="user in filteredUsers" :key="user.id">
+                            <tr class="hover:bg-gray-50 transition-colors duration-200">
+                                <td x-show="batchDeleteMode" class="px-6 py-4 whitespace-nowrap">
+                                    <input 
+                                        type="checkbox" 
+                                        @change="toggleSelectUser(user.id)"
+                                        :checked="selectedUsers.includes(user.id)"
+                                        class="rounded border-gray-300"
+                                    />
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="flex items-center">
+                                        <div class="h-10 w-10 rounded-full overflow-hidden bg-blue-100 flex items-center justify-center flex-shrink-0">
+                                            <template x-if="user.avatar">
+                                                <img :src="getAvatarUrl(user.avatar)" :alt="user.nickname" class="h-10 w-10 object-cover" @error="$el.replaceWith(document.createElement('i')).classList.add('fas', 'fa-user', 'text-blue-600')" />
+                                            </template>
+                                            <template x-if="!user.avatar">
+                                                <i class="fas fa-user text-blue-600"></i>
+                                            </template>
+                                        </div>
+                                        <div class="ml-3">
+                                            <div class="text-sm font-medium text-gray-900" x-text="user.nickname"></div>
+                                            <div class="text-xs text-gray-500 truncate max-w-[150px]" x-text="user.openId"></div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                    <div class="flex items-center">
+                                        <i class="fas fa-heart text-red-400 mr-2"></i>
+                                        <span x-text="formatDate(user.subscribeTime)"></span>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-900">
+                                    <template x-if="user.latestActivationCode">
+                                        <span class="inline-flex items-center px-3 py-1 rounded-lg bg-green-50 text-green-700 border border-green-200 font-semibold">
+                                            <i class="fas fa-key mr-1 text-green-600"></i>
+                                            <span x-text="user.latestActivationCode"></span>
+                                        </span>
+                                    </template>
+                                    <template x-if="!user.latestActivationCode && !user.activationCode">
+                                        <span class="text-gray-400 italic">-</span>
+                                    </template>
+                                    <template x-if="!user.latestActivationCode && user.activationCode">
+                                        <span class="inline-flex items-center px-3 py-1 rounded-lg bg-blue-50 text-blue-700 border border-blue-200 font-semibold">
+                                            <i class="fas fa-key mr-1 text-blue-600"></i>
+                                            <span x-text="user.activationCode"></span>
+                                        </span>
+                                    </template>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <template x-if="user.activationStatus === 'activated'">
+                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-gradient-to-r from-green-100 to-emerald-100 text-green-800 border border-green-300">
+                                            <i class="fas fa-check-circle mr-1 text-green-600"></i>
+                                            已激活
+                                        </span>
+                                    </template>
+                                    <template x-if="user.activationStatus === 'pending'">
+                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800 border border-yellow-300">
+                                            <i class="fas fa-hourglass-half mr-1 text-yellow-600"></i>
+                                            待激活
+                                        </span>
+                                    </template>
+                                    <template x-if="user.activationStatus === 'none'">
+                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-800 border border-gray-300">
+                                            <i class="fas fa-circle-notch mr-1 text-gray-600"></i>
+                                            未获取
+                                        </span>
+                                    </template>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                    <template x-if="user.lastLoginTime">
+                                        <div class="flex items-center">
+                                            <i class="fas fa-clock text-gray-400 mr-2"></i>
+                                            <span x-text="formatDate(user.lastLoginTime)"></span>
+                                        </div>
+                                    </template>
+                                    <template x-if="!user.lastLoginTime">
+                                        <span class="text-gray-400 italic flex items-center">
+                                            <i class="fas fa-ban text-gray-300 mr-2"></i>
+                                            从未
+                                        </span>
+                                    </template>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                    <div class="flex items-center justify-end space-x-2">
+                                        <button 
+                                            @click="viewDetail(user)"
+                                            class="text-blue-600 hover:text-blue-900 transition-colors duration-200">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        <button 
+                                            @click="deleteUser(user.id)"
+                                            class="text-red-600 hover:text-red-900 transition-colors duration-200">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+        </template>
+    </div>
+    
+    <!-- 用户详情弹窗 -->
+    <template x-if="showDetailModal && currentUser">
+        <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50" @click.self="showDetailModal = false">
+            <div class="bg-white rounded-xl shadow-lg p-6 w-full max-w-2xl">
+                <h3 class="text-lg font-semibold mb-4 text-gray-800">用户详情</h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- 左侧：用户基本信息 -->
+                    <div class="space-y-4">
+                        <div class="flex flex-col items-center">
+                            <div class="h-24 w-24 rounded-full overflow-hidden border-4 border-blue-100 bg-blue-100 flex items-center justify-center flex-shrink-0">
+                                <template x-if="currentUser.avatar">
+                                    <img :src="getAvatarUrl(currentUser.avatar)" :alt="currentUser.nickname" class="h-24 w-24 object-cover" @error="$el.replaceWith(document.createElement('i')).classList.add('fas', 'fa-user', 'text-blue-600', 'text-4xl')" />
+                                </template>
+                                <template x-if="!currentUser.avatar">
+                                    <i class="fas fa-user text-blue-600 text-4xl"></i>
+                                </template>
+                            </div>
+                            <h4 class="mt-4 text-xl font-semibold text-gray-800" x-text="currentUser.nickname"></h4>
+                            <p class="text-sm mt-1 text-gray-500" x-text="currentUser.openId"></p>
+                        </div>
+                        
+                        
+                        
+                        <div class="p-4 bg-gray-50 rounded-lg">
+                            <h5 class="text-sm font-medium mb-2 text-gray-700">用户信息</h5>
+                            <div class="space-y-2 text-sm">
+                                <div class="flex justify-between">
+                                    <span class="text-gray-500">关注时间：</span>
+                                    <span class="text-gray-800" x-text="formatDate(currentUser.subscribeTime)"></span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-500">所在城市：</span>
+                                    <span class="text-gray-800" x-text="currentUser.city || '未获取'"></span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-500">最后访问IP：</span>
+                                    <code class="text-xs bg-gray-100 px-2 py-1 rounded" x-text="currentUser.lastIp || '未记录'"></code>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-500">访问次数：</span>
+                                    <span class="text-gray-800" x-text="(currentUser.visitCount || 0) + ' 次'"></span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-500">最后登录：</span>
+                                    <span class="text-gray-800" x-text="currentUser.lastLoginTime ? formatDate(currentUser.lastLoginTime) : '从未登录'"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 右侧：激活信息 -->
+                    <div class="space-y-4">
+                        <div class="p-4 bg-gray-50 rounded-lg">
+                            <h5 class="text-sm font-medium mb-2 text-gray-700">激活信息</h5>
+                            <div class="space-y-2 text-sm">
+                                <div class="flex justify-between">
+                                    <span class="text-gray-500">激活状态：</span>
+                                    <span :class="getStatusClass(currentUser.activationStatus)" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full" x-text="getStatusText(currentUser.activationStatus)"></span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-500">激活码：</span>
+                                    <code class="font-mono" x-text="currentUser.latestActivationCode || currentUser.activationCode || '未生成'" :class="currentUser.latestActivationCode ? 'bg-green-100 text-green-800 px-2 py-1 rounded text-xs' : 'text-gray-800'"></code>
+                                </div>
+                                <div x-show="currentUser.latestActivationCode" class="flex justify-between text-xs">
+                                    <span class="text-gray-500">激活码状态：</span>
+                                    <span :class="currentUser.latestCodeStatus === 'unused' ? 'bg-green-100 text-green-800' : currentUser.latestCodeStatus === 'used' ? 'bg-gray-100 text-gray-800' : 'bg-red-100 text-red-800'" class="px-2 inline-flex leading-5 font-semibold rounded-full" x-text="currentUser.latestCodeStatus === 'unused' ? '未使用' : currentUser.latestCodeStatus === 'used' ? '已使用' : '已过期'"></span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="p-4 bg-gray-50 rounded-lg">
+                            <h5 class="text-sm font-medium mb-2 text-gray-700">操作记录</h5>
+                            <div class="space-y-2 text-sm">
+                                <div class="flex justify-between">
+                                    <span class="text-gray-500">首次关注：</span>
+                                    <span class="text-gray-800" x-text="formatDate(currentUser.subscribeTime)"></span>
+                                </div>
+                                <div x-show="currentUser.activationStatus !== 'none'" class="flex justify-between">
+                                    <span class="text-gray-500">获取激活码：</span>
+                                    <span class="text-gray-800" x-text="formatDate(currentUser.subscribeTime)"></span>
+                                </div>
+                                <div x-show="currentUser.activationStatus === 'activated'" class="flex justify-between">
+                                    <span class="text-gray-500">激活成功：</span>
+                                    <span class="text-gray-800" x-text="formatDate(currentUser.lastLoginTime || currentUser.subscribeTime)"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-6 flex justify-end">
+                    <button 
+                        @click="showDetailModal = false"
+                        class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all duration-200">
+                        关闭
+                    </button>
+                </div>
+            </div>
+        </div>
+    </template>
+</div>
+
+<script>
+function usersData() {
+    return {
+        users: [],
+        filteredUsers: [],
+        searchTerm: '',
+        statusFilter: 'all',
+        loading: true,
+        showDetailModal: false,
+        currentUser: null,
+        batchDeleteMode: false,
+        selectedUsers: [],
+        syncing: false,
+        
+        getStatusText(status) {
+            const map = { none: '未获取', pending: '待激活', activated: '已激活' };
+            return map[status] || status;
+        },
+        
+        getAvatarUrl(avatar) {
+            // 处理avatar:type格式的头像URL
+            if (avatar && avatar.startsWith('avatar:')) {
+                const avatarType = avatar.substring(7);
+                return `/api/avatar/${avatarType}?size=64`;
+            }
+            // 返回原始URL或使用默认头像
+            return avatar || '';
+        },
+        
+        getStatusClass(status) {
+            const classes = {
+                none: 'bg-gray-100 text-gray-800',
+                pending: 'bg-yellow-100 text-yellow-800',
+                activated: 'bg-green-100 text-green-800'
+            };
+            return classes[status] || 'bg-gray-100 text-gray-800';
+        },
+        
+        formatDate(dateStr) {
+            const date = new Date(dateStr);
+            return date.toLocaleString('zh-CN', {
+                year: 'numeric', month: '2-digit', day: '2-digit',
+                hour: '2-digit', minute: '2-digit'
+            });
+        },
+        
+        async loadUsers() {
+            try {
+                // 添加时间戳和禁用缓存头，防止浏览器缓存
+                const response = await fetch(`/api/users?t=${Date.now()}`, {
+                    cache: 'no-store',
+                    headers: {
+                        'Cache-Control': 'no-cache, no-store, max-age=0'
+                    }
+                });
+                
+                // 处理401未授权
+                if (response.status === 401) {
+                    window.location.href = '/login';
+                    return;
+                }
+                
+                if (!response.ok) {
+                    throw new Error(`API错误: ${response.status}`);
+                }
+                
+                this.users = await response.json();
+                console.log(`[成功] 二个用户数: ${this.users.length}`);
+                
+                // 为每个用户加载激活码
+                for (let user of this.users) {
+                    try {
+                        const codesResponse = await fetch(`/api/users/${encodeURIComponent(user.openId)}/codes`, {
+                            cache: 'no-store'
+                        });
+                        const codesData = await codesResponse.json();
+                        if (codesData.success && codesData.codes && codesData.codes.length > 0) {
+                            // 找最新的激活码
+                            const latestCode = codesData.codes.sort((a, b) => 
+                                new Date(b.createdAt) - new Date(a.createdAt)
+                            )[0];
+                            user.latestActivationCode = latestCode.code;
+                            user.latestCodeStatus = latestCode.status;
+                        }
+                    } catch (error) {
+                        console.debug(`加载用户 ${user.openId} 的激活码失败:`, error);
+                    }
+                }
+                
+                this.filterUsers();
+                this.loading = false;
+            } catch (error) {
+                console.error('加载用户失败:', error);
+                window.showToast('加载用户失败，请刷新页面', 'error');
+                this.loading = false;
+            }
+        },
+        
+        filterUsers() {
+            this.filteredUsers = this.users.filter(user => {
+                // 从数据库中同步激活状态
+                // 如果激活码状态为'used'，则激活状态应为'activated'
+                if (user.latestCodeStatus === 'used' && user.activationStatus !== 'activated') {
+                    user.activationStatus = 'activated';
+                }
+                
+                const matchSearch = user.nickname.includes(this.searchTerm) || 
+                                   user.openId.includes(this.searchTerm) ||
+                                   (user.activationCode && user.activationCode.includes(this.searchTerm));
+                const matchStatus = this.statusFilter === 'all' || user.activationStatus === this.statusFilter;
+                return matchSearch && matchStatus;
+            });
+        },
+        
+        viewDetail(user) {
+            this.currentUser = user;
+            this.showDetailModal = true;
+            // 加载用户的激活码
+            this.loadUserCodes(user.openId);
+        },
+        
+        async loadUserCodes(openid) {
+            try {
+                const response = await fetch(`/api/users/${encodeURIComponent(openid)}/codes`, {
+                    cache: 'no-store',
+                    headers: {
+                        'Cache-Control': 'no-cache, no-store, max-age=0'
+                    }
+                });
+                const data = await response.json();
+                if (data.success && data.codes && data.codes.length > 0) {
+                    // 找最近发起的最新激活码
+                    const latestCode = data.codes.sort((a, b) => 
+                        new Date(b.createdAt) - new Date(a.createdAt)
+                    )[0];
+                    if (this.currentUser) {
+                        this.currentUser.latestActivationCode = latestCode.code;
+                        this.currentUser.latestCodeStatus = latestCode.status;
+                        this.currentUser.latestCodeCreatedAt = latestCode.createdAt;
+                    }
+                }
+            } catch (error) {
+                console.error('加载用户激活码失败:', error);
+            }
+        },
+        
+        toggleSelectUser(userId) {
+            if (this.selectedUsers.includes(userId)) {
+                this.selectedUsers = this.selectedUsers.filter(id => id !== userId);
+            } else {
+                this.selectedUsers.push(userId);
+            }
+        },
+        
+        toggleSelectAllUsers() {
+            if (this.selectedUsers.length === this.filteredUsers.length && this.filteredUsers.length > 0) {
+                this.selectedUsers = [];
+            } else {
+                this.selectedUsers = this.filteredUsers.map(user => user.id);
+            }
+        },
+        
+        deleteUser(userId) {
+            if (!confirm('确定要删除这个用户吗？')) {
+                return;
+            }
+            
+            fetch(`/api/users/${userId}`, {
+                method: 'DELETE'
+            })
+            .then(response => {
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                window.showToast('用户已删除', 'success');
+                console.log('[DEBUG] deleteUser success, reloading...');
+                setTimeout(() => window.location.reload(true), 800);
+            })
+            .catch(error => {
+                console.error('删除请求失败:', error);
+                window.showToast('删除失败：' + error.message, 'error');
+            });
+        },
+        
+        async deleteSelectedUsers() {
+            const count = this.selectedUsers.length;
+            if (count === 0) {
+                window.showToast('请先选择要删除的用户', 'warning');
+                return;
+            }
+            
+            if (!confirm(`确定要删除选中的 ${count} 个用户吗？此操作无法撤销。`)) {
+                return;
+            }
+            
+            try {
+                let successCount = 0;
+                let failCount = 0;
+                
+                for (const userId of this.selectedUsers) {
+                    try {
+                        const response = await fetch(`/api/users/${userId}`, {
+                            method: 'DELETE'
+                        });
+                        // ✅ 只检查 HTTP 状态码（不判断 JSON）
+                        if (response.ok) {
+                            successCount++;
+                        } else {
+                            failCount++;
+                        }
+                    } catch (error) {
+                        failCount++;
+                        console.error(`删除错误 ${userId}:`, error);
+                    }
+                    await new Promise(resolve => setTimeout(resolve, 50));
+                }
+                
+                const msg = failCount > 0 ? `成功删除 ${successCount} 个，失败 ${failCount} 个` : `成功删除 ${successCount} 个`;
+                if (failCount > 0) {
+                    window.showToast(msg, 'warning');
+                } else {
+                    window.showToast(msg, 'success');
+                }
+                
+                if (successCount > 0) {
+                    console.log('[DEBUG] deleteSelectedUsers success, reloading...');
+                    setTimeout(() => window.location.reload(true), 800);
+                }
+            } catch (error) {
+                console.error('批量删除失败:', error);
+                window.showToast('批量删除失败', 'error');
+            }
+        },
+        
+        async syncWechatInfo() {
+            if (this.syncing) {
+                return;
+            }
+            
+            if (!confirm('确定要与微信服务器同步所有用户信息（头像、昵称等）吗？此操作可能需要较长时间。')) {
+                return;
+            }
+            
+            this.syncing = true;
+            try {
+                const response = await fetch('/api/users/sync-wechat-info', {
+                    method: 'POST',
+                    cache: 'no-store',
+                    headers: {
+                        'Cache-Control': 'no-cache, no-store, max-age=0'
+                    }
+                });
+                
+                const result = await response.json();
+                if (result.success) {
+                    window.showToast(result.message, 'success');
+                    // 重新加载用户列表
+                    setTimeout(() => {
+                        this.loading = true;
+                        this.loadUsers();
+                    }, 1000);
+                } else {
+                    window.showToast(result.message || '同步失败', 'error');
+                    console.error('同步结果:', result);
+                }
+            } catch (error) {
+                console.error('同步错误:', error);
+                window.showToast('同步失败: ' + error.message, 'error');
+            } finally {
+                this.syncing = false;
+            }
+        },
+        
+        init() {
+            this.loadUsers();
+        }
+    }
+}
+</script>
+{% endblock %}

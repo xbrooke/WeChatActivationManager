@@ -1,0 +1,343 @@
+{% extends "admin/layout.html" %}
+
+{% block page_title %}数据统计{% endblock %}
+
+{% block page_content %}
+<div class="space-y-6" x-data="statisticsData()">
+    <!-- 页面标题 -->
+    <div class="fade-in">
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-800">数据统计 & 系统信息</h1>
+                <p class="text-gray-500 mt-1">实时数据统计与系统信息展示</p>
+            </div>
+            <button 
+                @click="loadStats()"
+                class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-200 flex items-center">
+                <i class="fas fa-sync-alt mr-2" :class="loading && 'animate-spin'"></i>刷新
+            </button>
+        </div>
+    </div>
+    
+    <!-- 统计卡片 -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 fade-in">
+        <!-- 卡片1：总激活码 -->
+        <div class="p-6 rounded-xl shadow-sm border bg-white border-gray-100 card-hover">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm text-gray-500">总激活码数</p>
+                    <h3 class="text-3xl font-bold mt-1 text-gray-800" x-text="stats.total_codes || '-'"></h3>
+                    <p class="text-xs text-gray-400 mt-2">全部激活码总计</p>
+                </div>
+                <div class="bg-blue-500 p-4 rounded-full text-white shadow-lg">
+                    <i class="fas fa-key text-2xl"></i>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 卡片2：未使用 -->
+        <div class="p-6 rounded-xl shadow-sm border bg-white border-gray-100 card-hover">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm text-gray-500">未使用</p>
+                    <h3 class="text-3xl font-bold mt-1 text-gray-800" x-text="stats.unused_codes || '-'"></h3>
+                    <p class="text-xs text-gray-400 mt-2">可用激活码</p>
+                </div>
+                <div class="bg-green-500 p-4 rounded-full text-white shadow-lg">
+                    <i class="fas fa-check-circle text-2xl"></i>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 卡片3：已使用 -->
+        <div class="p-6 rounded-xl shadow-sm border bg-white border-gray-100 card-hover">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm text-gray-500">已使用</p>
+                    <h3 class="text-3xl font-bold mt-1 text-gray-800" x-text="stats.used_codes || '-'"></h3>
+                    <p class="text-xs text-gray-400 mt-2">已被激活</p>
+                </div>
+                <div class="bg-yellow-500 p-4 rounded-full text-white shadow-lg">
+                    <i class="fas fa-check text-2xl"></i>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 卡片4：已过期 -->
+        <div class="p-6 rounded-xl shadow-sm border bg-white border-gray-100 card-hover">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm text-gray-500">已过期</p>
+                    <h3 class="text-3xl font-bold mt-1 text-gray-800" x-text="stats.expired_codes || '-'"></h3>
+                    <p class="text-xs text-gray-400 mt-2">过期激活码</p>
+                </div>
+                <div class="bg-red-500 p-4 rounded-full text-white shadow-lg">
+                    <i class="fas fa-times-circle text-2xl"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 用户统计 -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 fade-in">
+        <!-- 卡片5：总用户数 -->
+        <div class="p-6 rounded-xl shadow-sm border bg-white border-gray-100 card-hover">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm text-gray-500">总用户数</p>
+                    <h3 class="text-3xl font-bold mt-1 text-gray-800" x-text="stats.total_users || '-'"></h3>
+                    <p class="text-xs text-gray-400 mt-2">系统注册用户</p>
+                </div>
+                <div class="bg-purple-500 p-4 rounded-full text-white shadow-lg">
+                    <i class="fas fa-users text-2xl"></i>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 卡片6：已激活用户 -->
+        <div class="p-6 rounded-xl shadow-sm border bg-white border-gray-100 card-hover">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm text-gray-500">已激活用户</p>
+                    <h3 class="text-3xl font-bold mt-1 text-gray-800" x-text="stats.activated_users || '-'"></h3>
+                    <p class="text-xs text-gray-400 mt-2">激活完成</p>
+                </div>
+                <div class="bg-teal-500 p-4 rounded-full text-white shadow-lg">
+                    <i class="fas fa-user-check text-2xl"></i>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 卡片7：待激活用户 -->
+        <div class="p-6 rounded-xl shadow-sm border bg-white border-gray-100 card-hover">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm text-gray-500">待激活用户</p>
+                    <h3 class="text-3xl font-bold mt-1 text-gray-800" x-text="stats.pending_users || '-'"></h3>
+                    <p class="text-xs text-gray-400 mt-2">等待激活</p>
+                </div>
+                <div class="bg-orange-500 p-4 rounded-full text-white shadow-lg">
+                    <i class="fas fa-hourglass-half text-2xl"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 统计摘要表格 -->
+    <div class="p-6 rounded-xl shadow-sm border bg-white border-gray-100 fade-in">
+        <h3 class="font-semibold mb-4 flex items-center text-gray-800">
+            <i class="fas fa-chart-bar mr-2 text-blue-500"></i>统计摘要
+        </h3>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">统计项</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">数值</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">百分比</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    <tr>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">激活码使用率</td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="text-sm font-medium text-gray-900" x-text="usageRate + '%'"></span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="w-24 bg-gray-200 rounded-full h-2">
+                                <div class="bg-blue-500 h-2 rounded-full" :style="'width: ' + usageRate + '%'"></div>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">用户激活率</td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="text-sm font-medium text-gray-900" x-text="activationRate + '%'"></span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="w-24 bg-gray-200 rounded-full h-2">
+                                <div class="bg-green-500 h-2 rounded-full" :style="'width: ' + activationRate + '%'"></div>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <!-- 系统信息 -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 fade-in">
+        <!-- 应用信息 -->
+        <div class="p-6 rounded-xl shadow-sm border bg-white border-gray-100">
+            <h3 class="font-semibold mb-4 flex items-center text-gray-800">
+                <i class="fas fa-cube mr-2 text-blue-500"></i>应用信息
+            </h3>
+            <div class="space-y-3">
+                <div class="flex justify-between">
+                    <span class="text-sm text-gray-600">应用名称:</span>
+                    <span class="text-sm font-medium text-gray-900" x-text="sysInfo.app_name"></span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-sm text-gray-600">应用版本:</span>
+                    <span class="text-sm font-medium text-gray-900" x-text="sysInfo.version"></span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-sm text-gray-600">开发者:</span>
+                    <span class="text-sm font-medium text-gray-900" x-text="sysInfo.author"></span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-sm text-gray-600">执行模式:</span>
+                    <span class="text-sm font-medium text-gray-900" x-text="sysInfo.storage_mode"></span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-sm text-gray-600">时区:</span>
+                    <span class="text-sm font-medium text-gray-900" x-text="sysInfo.timezone"></span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 执行信息 -->
+        <div class="p-6 rounded-xl shadow-sm border bg-white border-gray-100">
+            <h3 class="font-semibold mb-4 flex items-center text-gray-800">
+                <i class="fas fa-server mr-2 text-green-500"></i>执行信息
+            </h3>
+            <div class="space-y-3">
+                <div class="flex justify-between">
+                    <span class="text-sm text-gray-600">活跃用户:</span>
+                    <span class="text-sm font-medium text-blue-600" x-text="stats.activated_users"></span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-sm text-gray-600">待激活用户:</span>
+                    <span class="text-sm font-medium text-yellow-600" x-text="stats.pending_users"></span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-sm text-gray-600">未使用激活码:</span>
+                    <span class="text-sm font-medium text-green-600" x-text="stats.unused_codes"></span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-sm text-gray-600">系统状态:</span>
+                    <span class="text-sm font-medium text-green-600"><i class="fas fa-check-circle"></i> 正常运行</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-sm text-gray-600">最后更新:</span>
+                    <span class="text-sm font-medium text-gray-900" x-text="formatTime(sysInfo.last_update)"></span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-sm text-gray-600">自动刷新:</span>
+                    <span class="text-sm font-medium">
+                        <label class="inline-flex items-center">
+                            <input type="checkbox" x-model="autoRefresh" @change="toggleAutoRefresh()" class="rounded">
+                            <span class="ml-2" x-text="autoRefresh ? '已启用' : '已禁用'"></span>
+                        </label>
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function statisticsData() {
+    return {
+        stats: {
+            total_codes: 0,
+            unused_codes: 0,
+            used_codes: 0,
+            expired_codes: 0,
+            total_users: 0,
+            activated_users: 0,
+            pending_users: 0
+        },
+        sysInfo: {
+            app_name: '激活码管理系统',
+            version: '1.0.0',
+            author: '开发团队',
+            storage_mode: 'JSON文件',
+            timezone: 'Asia/Shanghai',
+            last_update: new Date().toISOString()
+        },
+        usageRate: 0,
+        activationRate: 0,
+        loading: false,
+        autoRefresh: false,
+        refreshInterval: null,
+        
+        async loadStats() {
+            try {
+                this.loading = true;
+                // 添加时间戳和禁用缓存头，防止浏览器缓存
+                const response = await fetch(`/api/statistics?t=${Date.now()}`, {
+                    cache: 'no-store',
+                    headers: {
+                        'Cache-Control': 'no-cache, no-store, max-age=0'
+                    }
+                });
+                this.stats = await response.json();
+                this.sysInfo.last_update = new Date().toISOString();
+                this.calculateRates();
+            } catch (error) {
+                console.error('加载统计数据失败:', error);
+            } finally {
+                this.loading = false;
+            }
+        },
+        
+        calculateRates() {
+            // 计算激活码使用率
+            if (this.stats.total_codes > 0) {
+                this.usageRate = Math.round((this.stats.used_codes / this.stats.total_codes) * 100);
+            }
+            
+            // 计算用户激活率
+            if (this.stats.total_users > 0) {
+                this.activationRate = Math.round((this.stats.activated_users / this.stats.total_users) * 100);
+            }
+        },
+        
+        formatTime(dateStr) {
+            if (!dateStr) return '-';
+            try {
+                const date = new Date(dateStr);
+                return date.toLocaleString('zh-CN', {
+                    year: 'numeric', month: '2-digit', day: '2-digit',
+                    hour: '2-digit', minute: '2-digit', second: '2-digit'
+                });
+            } catch (e) {
+                console.error('日期格式化失败:', e);
+                return '-';
+            }
+        },
+        
+        toggleAutoRefresh() {
+            if (this.autoRefresh) {
+                // 启用自动刷新，每 30 秒刷新一次
+                this.refreshInterval = setInterval(() => {
+                    this.loadStats();
+                }, 30000);
+                console.log('自动刷新已启用，间隔30秒');
+                window.showToast('自动刷新已启用', 'success');
+            } else {
+                // 禁用自动刷新
+                if (this.refreshInterval) {
+                    clearInterval(this.refreshInterval);
+                    this.refreshInterval = null;
+                }
+                console.log('自动刷新已禁用');
+                window.showToast('自动刷新已禁用', 'info');
+            }
+        },
+        
+        init() {
+            console.log('统计数据页面初始化');
+            this.loadStats();
+            
+            // 监听其他页面的数据更新事件，自动刷新统计数据
+            window.addEventListener('statsUpdated', () => {
+                console.log('检测到数据更新事件，自动刷新统计数据');
+                this.loadStats();
+            });
+        }
+    }
+}
+</script>
+{% endblock %}

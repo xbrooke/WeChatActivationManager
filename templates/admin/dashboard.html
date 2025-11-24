@@ -1,0 +1,334 @@
+{% extends "admin/layout.html" %}
+
+{% block page_title %}仪表盘{% endblock %}
+
+{% block page_content %}
+<div class="space-y-6" x-data="dashboardData()">
+    <!-- 页面标题 -->
+    <div class="fade-in">
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-800">仪表盘</h1>
+                <p class="text-gray-500 mt-1">📊 系统实时数据概览</p>
+            </div>
+            <div class="flex space-x-2">
+                <button 
+                    @click="timeRange = 'day'" 
+                    :class="timeRange === 'day' ? 'bg-blue-500 text-white shadow-md' : 'bg-gray-100 text-gray-700'"
+                    class="px-3 py-1 text-sm rounded-full transition-all duration-200 hover:scale-105">
+                    日
+                </button>
+                <button 
+                    @click="timeRange = 'week'" 
+                    :class="timeRange === 'week' ? 'bg-blue-500 text-white shadow-md' : 'bg-gray-100 text-gray-700'"
+                    class="px-3 py-1 text-sm rounded-full transition-all duration-200 hover:scale-105">
+                    周
+                </button>
+                <button 
+                    @click="timeRange = 'month'" 
+                    :class="timeRange === 'month' ? 'bg-blue-500 text-white shadow-md' : 'bg-gray-100 text-gray-700'"
+                    class="px-3 py-1 text-sm rounded-full transition-all duration-200 hover:scale-105">
+                    月
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 关键指标卡片 -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 fade-in">
+        <!-- 激活码总数 -->
+        <div class="p-6 rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 border bg-gradient-to-br from-blue-50 to-white border-blue-100 card-hover">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm text-gray-600 flex items-center font-medium">
+                        <i class="fas fa-key mr-2 text-blue-500"></i>激活码总数
+                    </p>
+                    <h3 class="text-4xl font-bold mt-3 text-blue-600" x-text="stats.totalCodes"></h3>
+                    <div class="flex items-center mt-3 text-sm bg-green-50 text-green-700 px-2 py-1 rounded-full inline-flex">
+                        <i class="fas fa-arrow-up mr-1 text-xs"></i>
+                        <span x-text="stats.codesGrowth"></span>
+                        <span class="ml-1 text-green-600">较上期</span>
+                    </div>
+                </div>
+                <div class="bg-blue-100 p-4 rounded-full text-blue-600 shadow-md">
+                    <i class="fas fa-key text-2xl"></i>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 已使用激活码 -->
+        <div class="p-6 rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 border bg-gradient-to-br from-green-50 to-white border-green-100 card-hover">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm text-gray-600 flex items-center font-medium">
+                        <i class="fas fa-check-circle mr-2 text-green-500"></i>已使用
+                    </p>
+                    <h3 class="text-4xl font-bold mt-3 text-green-600" x-text="stats.usedCodes"></h3>
+                    <div class="flex items-center mt-3 text-sm bg-blue-50 text-blue-700 px-2 py-1 rounded-full inline-flex">
+                        <i class="fas fa-chart-pie mr-1 text-xs"></i>
+                        <span x-text="stats.usedPercentage"></span>
+                        <span class="ml-1 text-blue-600">使用率</span>
+                    </div>
+                </div>
+                <div class="bg-green-100 p-4 rounded-full text-green-600 shadow-md">
+                    <i class="fas fa-check-circle text-2xl"></i>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 未使用激活码 -->
+        <div class="p-6 rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 border bg-gradient-to-br from-purple-50 to-white border-purple-100 card-hover">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm text-gray-600 flex items-center font-medium">
+                        <i class="fas fa-hourglass-end mr-2 text-purple-500"></i>未使用
+                    </p>
+                    <h3 class="text-4xl font-bold mt-3 text-purple-600" x-text="stats.unusedCodes"></h3>
+                    <div class="flex items-center mt-3 text-sm bg-amber-50 text-amber-700 px-2 py-1 rounded-full inline-flex">
+                        <i class="fas fa-exclamation-circle mr-1 text-xs"></i>
+                        <span x-text="stats.unusedCount"></span>
+                        <span class="ml-1 text-amber-600">待使用</span>
+                    </div>
+                </div>
+                <div class="bg-purple-100 p-4 rounded-full text-purple-600 shadow-md">
+                    <i class="fas fa-hourglass-end text-2xl"></i>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 活跃用户 -->
+        <div class="p-6 rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 border bg-gradient-to-br from-orange-50 to-white border-orange-100 card-hover">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm text-gray-600 flex items-center font-medium">
+                        <i class="fas fa-users mr-2 text-orange-500"></i>活跃用户
+                    </p>
+                    <h3 class="text-4xl font-bold mt-3 text-orange-600" x-text="stats.activeUsers"></h3>
+                    <div class="flex items-center mt-3 text-sm" :class="stats.usersGrowthTrend === 'up' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'">
+                        <div :class="stats.usersGrowthTrend === 'up' ? 'text-green-700' : 'text-red-700'" class="px-2 py-1 rounded-full inline-flex">
+                            <i :class="stats.usersGrowthTrend === 'up' ? 'fas fa-arrow-up' : 'fas fa-arrow-down'" class="mr-1 text-xs"></i>
+                            <span x-text="stats.usersGrowth"></span>
+                            <span class="ml-1" :class="stats.usersGrowthTrend === 'up' ? 'text-green-600' : 'text-red-600'">较上期</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-orange-100 p-4 rounded-full text-orange-600 shadow-md">
+                    <i class="fas fa-users text-2xl"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 第二行统计 -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 fade-in">
+    </div>
+    
+    <!-- 最近活动 - 简洁列表 -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-100 fade-in overflow-hidden">
+        <!-- 头部 -->
+        <div class="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
+            <h3 class="font-semibold text-gray-800 text-sm flex items-center">
+                <i class="fas fa-history mr-2 text-indigo-500"></i>最近活动日志
+            </h3>
+            <a href="/admin/logs" class="text-xs text-indigo-600 hover:text-indigo-700 font-medium flex items-center">
+                <i class="fas fa-arrow-right mr-1"></i>更多
+            </a>
+        </div>
+        
+        <!-- 内容 -->
+        <div class="p-4">
+            <template x-if="recentActivities.length === 0">
+                <div class="text-center py-8 text-gray-400 text-sm">
+                    <i class="fas fa-inbox text-2xl mb-2 block"></i>
+                    暂无活动
+                </div>
+            </template>
+            
+            <template x-if="recentActivities.length > 0">
+                <div class="space-y-3">
+                    <template x-for="activity in recentActivities" :key="activity.id">
+                        <div class="flex gap-3 p-2 rounded hover:bg-gray-50 transition-colors duration-200">
+                            <!-- 左侧圆点 -->
+                            <div class="flex flex-col items-center flex-shrink-0">
+                                <div class="w-3 h-3 rounded-full mt-1" 
+                                     :class="{
+                                         'bg-blue-500': activity.type === '生成激活码',
+                                         'bg-green-500': activity.type === '激活成功',
+                                         'bg-purple-500': activity.type === '关注公众号',
+                                         'bg-amber-500': activity.type !== '生成激活码' && activity.type !== '激活成功' && activity.type !== '关注公众号'
+                                     }">
+                                </div>
+                            </div>
+                            
+                            <!-- 内容 -->
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-start justify-between gap-2">
+                                    <div class="flex-1 min-w-0">
+                                        <div class="flex items-center gap-2 mb-1">
+                                            <!-- 头像 -->
+                                            <div class="w-6 h-6 rounded-full flex-shrink-0 flex items-center justify-center text-white text-xs" 
+                                                 :style="`background-color: ${activity.userColor}`">
+                                                <i :class="activity.userIcon" style="font-size: 10px;"></i>
+                                            </div>
+                                            <!-- 用户和操作 -->
+                                            <span class="text-xs font-medium text-gray-800" x-text="activity.user"></span>
+                                            <template x-if="activity.type === '生成激活码'">
+                                                <span class="text-xs px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded">
+                                                    <i class="fas fa-plus-circle mr-0.5" style="font-size: 9px;"></i>生成激活码
+                                                </span>
+                                            </template>
+                                            <template x-if="activity.type === '激活成功'">
+                                                <span class="text-xs px-1.5 py-0.5 bg-green-100 text-green-700 rounded">
+                                                    <i class="fas fa-check-circle mr-0.5" style="font-size: 9px;"></i>激活成功
+                                                </span>
+                                            </template>
+                                            <template x-if="activity.type === '关注公众号'">
+                                                <span class="text-xs px-1.5 py-0.5 bg-purple-100 text-purple-700 rounded">
+                                                    <i class="fas fa-star mr-0.5" style="font-size: 9px;"></i>关注公众号
+                                                </span>
+                                            </template>
+                                            <template x-if="activity.type !== '生成激活码' && activity.type !== '激活成功' && activity.type !== '关注公众号'">
+                                                <span :class="activity.typeClass" class="text-xs px-1.5 py-0.5 rounded" x-text="activity.type"></span>
+                                            </template>
+                                        </div>
+                                        <p class="text-xs text-gray-600 truncate" x-text="activity.detail"></p>
+                                    </div>
+                                    <!-- 时间 - 直接在HTML中计算，确保每秒更新 -->
+                                    <span class="text-xs text-gray-400 flex-shrink-0" x-text="(() => {
+                                        if (!activity?.timestamp) return activity?.time_display || '需稍后';
+                                        const now = new Date().getTime();
+                                        const diff = Math.floor((now - activity.timestamp * 1000) / 1000);
+                                        if (diff < 60) return '刚刚';
+                                        if (diff < 3600) return Math.floor(diff/60) + '分钟前';
+                                        if (diff < 86400) return Math.floor(diff/3600) + '小时前';
+                                        if (diff < 604800) return Math.floor(diff/86400) + '天前';
+                                        return activity.time_display || '需稍后';
+                                    })()"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </template>
+        </div>
+    </div>
+</div>
+
+<script>
+    function dashboardData() {
+        return {
+            timeRange: 'week',
+            stats: {
+                totalCodes: 0,
+                codesGrowth: '+0%',
+                usedCodes: 0,
+                usedPercentage: '0%',
+                unusedCodes: 0,
+                unusedCount: '0%',
+                activeUsers: 0,
+                usersGrowth: '+0%',
+                usersGrowthTrend: 'up'
+            },
+            recentActivities: [],
+            currentTime: new Date(),
+            
+            // 存储定时器引用
+            timeUpdateInterval: null,
+            autoRefreshInterval: null,
+            
+            async loadStats() {
+                try {
+                    const ts = new Date().getTime();
+                    const response = await fetch(`/api/statistics?t=${ts}`);
+                    if (!response.ok) throw new Error('API error');
+                    const data = await response.json();
+                    
+                    this.stats.totalCodes = data.total_codes || 0;
+                    this.stats.usedCodes = data.used_codes || 0;
+                    this.stats.unusedCodes = (data.total_codes || 0) - (data.used_codes || 0);
+                    
+                    if (this.stats.totalCodes > 0) {
+                        this.stats.usedPercentage = Math.round((this.stats.usedCodes / this.stats.totalCodes) * 100) + '%';
+                        this.stats.unusedCount = Math.round((this.stats.unusedCodes / this.stats.totalCodes) * 100) + '%';
+                    }
+                    
+                    this.stats.activeUsers = data.activated_users || 0;
+                } catch (error) {
+                    console.error('加载统计数据失败:', error);
+                }
+            },
+            
+            async loadActivities() {
+                try {
+                    const ts = new Date().getTime();
+                    const response = await fetch(`/api/activities?limit=5&t=${ts}`);
+                    if (!response.ok) throw new Error('API error');
+                    const data = await response.json();
+                    this.recentActivities = data.activities || [];
+                    // 调试：打印数据
+                    if (this.recentActivities.length > 0) {
+                        console.log('活动数据加载成功，第一条:', this.recentActivities[0]);
+                    }
+                } catch (error) {
+                    console.error('加载活动日志失败:', error);
+                }
+            },
+            
+            // 销毁资源 - 防止内存泄漏
+            destroy() {
+                if (this.timeUpdateInterval) {
+                    clearInterval(this.timeUpdateInterval);
+                    this.timeUpdateInterval = null;
+                }
+                if (this.autoRefreshInterval) {
+                    clearInterval(this.autoRefreshInterval);
+                    this.autoRefreshInterval = null;
+                }
+            },
+            
+            // 每秒强制更新UI
+            startTimeUpdate() {
+                // 防止重复创建定时器
+                if (this.timeUpdateInterval) {
+                    clearInterval(this.timeUpdateInterval);
+                }
+                this.timeUpdateInterval = setInterval(() => {
+                    this.currentTime = new Date();
+                }, 1000);
+            },
+            
+            setupEventListeners() {
+                window.addEventListener('dataUpdated', (event) => {
+                    if (event.detail && event.detail.type === 'activities') {
+                        this.loadActivities();
+                    }
+                });
+                
+                window.addEventListener('statsUpdated', () => {
+                    this.loadStats();
+                });
+            },
+            
+            
+            setupAutoRefresh() {
+                // 防止重复创建定时器
+                if (this.autoRefreshInterval) {
+                    clearInterval(this.autoRefreshInterval);
+                }
+                this.autoRefreshInterval = setInterval(() => {
+                    this.loadStats();
+                    this.loadActivities();
+                }, 10000);
+            },
+            
+            init() {
+                this.loadStats();
+                this.loadActivities();
+                this.setupEventListeners();
+                this.setupAutoRefresh();
+                this.startTimeUpdate();
+            }
+        }
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,227 @@
+{% extends "base.html" %}
+
+{% block title %}{% block page_title %}管理后台{% endblock %} - API服务中心{% endblock %}
+
+{% block content %}
+<div class="flex flex-col h-screen bg-gray-50 overflow-hidden transition-colors duration-300" x-data="adminLayout()" @init="init()">
+    <header class="sticky top-0 bg-gradient-to-r from-blue-600 to-indigo-700 text-white shadow-lg z-50 transition-all duration-300 py-3">
+        <div class="px-6 flex items-center justify-between">
+            <!-- 左侧品牌信息 -->
+            <div class="flex items-center">
+                <div class="mr-3">
+                    <i class="fas fa-magic text-2xl text-yellow-300"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold tracking-tight text-xl">
+                        徐大兵的激活码魔法工坊
+                    </h1>
+                </div>
+            </div>
+            
+            <!-- 右侧功能区 -->
+            <div class="flex items-center space-x-3">
+                <!-- 管理员头像 -->
+                <div class="w-9 h-9 rounded-full overflow-hidden bg-white/20 flex items-center justify-center border border-white/30 transition-all duration-300 hover:bg-white/30 hover:scale-105 cursor-pointer"
+                     title="管理员头像">
+                    <img :src="`/api/avatar/${currentAdminAvatarType}?size=36`" alt="管理员头像" class="w-9 h-9 object-cover" />
+                </div>
+                
+                <!-- 用户信息和退出 -->
+                <div class="relative">
+                    <div class="flex items-center cursor-pointer py-1 px-2 rounded-lg transition-all duration-300 hover:bg-white/10"
+                         @click="toggleAdminMenu()">
+                        <div class="ml-2 hidden md:block">
+                            <p class="text-sm font-medium">管理员</p>
+                        </div>
+                        <i class="fas fa-chevron-down ml-1 text-xs hidden md:block" :class="showAdminMenu ? 'rotate-180' : ''"></i>
+                    </div>
+                    
+                    <!-- 下拉菜单 -->
+                    <template x-if="showAdminMenu">
+                        <div class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl z-50 overflow-hidden">
+                            <div class="py-2">
+                                <button @click="handleLogout()" class="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center transition-colors duration-200">
+                                    <i class="fas fa-sign-out-alt mr-3"></i>
+                                    退出登录
+                                </button>
+                            </div>
+                        </div>
+                    </template>
+                    
+                    <!-- 点击外部关闭菜单 -->
+                    <template x-if="showAdminMenu">
+                        <div class="fixed inset-0 z-40" @click="showAdminMenu = false"></div>
+                    </template>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 顶部导航菜单 -->
+        <nav class="mt-3 px-6 overflow-x-auto no-scrollbar pb-2">
+            <div class="flex space-x-2">
+                <a href="/admin" 
+                   class="flex items-center px-4 py-2 text-sm font-medium transition-all duration-300 whitespace-nowrap rounded-xl"
+                   :class="currentPath === '/admin' ? 'bg-white/20 text-white shadow-sm' : 'text-white/80 hover:bg-white/10 hover:shadow-sm'">
+                    <div class="flex items-center justify-center w-7 h-7 rounded-lg mr-2 bg-white/20 text-white/80">
+                        <i class="fas fa-tachometer-alt"></i>
+                    </div>
+                    <span>仪表盘</span>
+                </a>
+                
+                <a href="/admin/activation-codes"
+                   class="flex items-center px-4 py-2 text-sm font-medium transition-all duration-300 whitespace-nowrap rounded-xl"
+                   :class="currentPath === '/admin/activation-codes' ? 'bg-white/20 text-white shadow-sm' : 'text-white/80 hover:bg-white/10 hover:shadow-sm'">
+                    <div class="flex items-center justify-center w-7 h-7 rounded-lg mr-2 bg-white/20 text-white/80">
+                        <i class="fas fa-key"></i>
+                    </div>
+                    <span>激活码管理</span>
+                </a>
+                
+                <a href="/admin/users"
+                   class="flex items-center px-4 py-2 text-sm font-medium transition-all duration-300 whitespace-nowrap rounded-xl"
+                   :class="currentPath === '/admin/users' ? 'bg-white/20 text-white shadow-sm' : 'text-white/80 hover:bg-white/10 hover:shadow-sm'">
+                    <div class="flex items-center justify-center w-7 h-7 rounded-lg mr-2 bg-white/20 text-white/80">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <span>用户管理</span>
+                </a>
+                
+                <a href="/admin/statistics"
+                   class="flex items-center px-4 py-2 text-sm font-medium transition-all duration-300 whitespace-nowrap rounded-xl"
+                   :class="currentPath === '/admin/statistics' ? 'bg-white/20 text-white shadow-sm' : 'text-white/80 hover:bg-white/10 hover:shadow-sm'">
+                    <div class="flex items-center justify-center w-7 h-7 rounded-lg mr-2 bg-white/20 text-white/80">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <span>数据统计</span>
+                </a>
+                
+                <a href="/admin/custom-reply"
+                   class="flex items-center px-4 py-2 text-sm font-medium transition-all duration-300 whitespace-nowrap rounded-xl"
+                   :class="currentPath === '/admin/custom-reply' ? 'bg-white/20 text-white shadow-sm' : 'text-white/80 hover:bg-white/10 hover:shadow-sm'">
+                    <div class="flex items-center justify-center w-7 h-7 rounded-lg mr-2 bg-white/20 text-white/80">
+                        <i class="fas fa-comment-dots"></i>
+                    </div>
+                    <span>自定义回复</span>
+                </a>
+                
+                <a href="/admin/trigger-keywords"
+                   class="flex items-center px-4 py-2 text-sm font-medium transition-all duration-300 whitespace-nowrap rounded-xl"
+                   :class="currentPath === '/admin/trigger-keywords' ? 'bg-white/20 text-white shadow-sm' : 'text-white/80 hover:bg-white/10 hover:shadow-sm'">
+                    <div class="flex items-center justify-center w-7 h-7 rounded-lg mr-2 bg-white/20 text-white/80">
+                        <i class="fas fa-zap"></i>
+                    </div>
+                    <span>触发关键词</span>
+                </a>
+                
+                <a href="/admin/logs"
+                   class="flex items-center px-4 py-2 text-sm font-medium transition-all duration-300 whitespace-nowrap rounded-xl"
+                   :class="currentPath === '/admin/logs' ? 'bg-white/20 text-white shadow-sm' : 'text-white/80 hover:bg-white/10 hover:shadow-sm'">
+                    <div class="flex items-center justify-center w-7 h-7 rounded-lg mr-2 bg-white/20 text-white/80">
+                        <i class="fas fa-file-alt"></i>
+                    </div>
+                    <span>系统日志</span>
+                </a>
+                
+                <a href="/admin/api-docs"
+                   class="flex items-center px-4 py-2 text-sm font-medium transition-all duration-300 whitespace-nowrap rounded-xl"
+                   :class="currentPath === '/admin/api-docs' ? 'bg-white/20 text-white shadow-sm' : 'text-white/80 hover:bg-white/10 hover:shadow-sm'">
+                    <div class="flex items-center justify-center w-7 h-7 rounded-lg mr-2 bg-white/20 text-white/80">
+                        <i class="fas fa-book"></i>
+                    </div>
+                    <span>API文档</span>
+                </a>
+                
+                <a href="/system-status"
+                   class="flex items-center px-4 py-2 text-sm font-medium transition-all duration-300 whitespace-nowrap rounded-xl"
+                   :class="currentPath === '/system-status' ? 'bg-white/20 text-white shadow-sm' : 'text-white/80 hover:bg-white/10 hover:shadow-sm'">
+                    <div class="flex items-center justify-center w-7 h-7 rounded-lg mr-2 bg-white/20 text-white/80">
+                        <i class="fas fa-server"></i>
+                    </div>
+                    <span>系统信息</span>
+                </a>
+            </div>
+        </nav>
+    </header>
+
+    <!-- 主内容 -->
+    <main class="flex-1 overflow-y-auto p-6 bg-gray-50 transition-colors duration-300">
+        {% block page_content %}{% endblock %}
+    </main>
+
+    <!-- 页脚 -->
+    <footer class="bg-white border-t border-gray-200 py-3 px-6 text-center text-gray-500 text-sm transition-colors duration-300">
+        © 2025 徐大兵的激活码魔法工坊 - 版权所有
+    </footer>
+</div>
+
+<script>
+    function adminLayout() {
+        return {
+            currentPath: window.location.pathname,
+            showAdminMenu: false,
+            currentAdminAvatarType: 'admin',
+            
+            init() {
+                // 页面加载时加载管理员头像设置
+                this.loadAdminAvatarType();
+            },
+            
+            async loadAdminAvatarType() {
+                try {
+                    const response = await fetch('/api/admin/settings');
+                    if (response.ok) {
+                        const data = await response.json();
+                        if (data.success && data.settings && data.settings.avatar_type) {
+                            this.currentAdminAvatarType = data.settings.avatar_type;
+                        }
+                    }
+                } catch (error) {
+                    console.error('加载管理员头像设置失败:', error);
+                }
+            },
+            
+            toggleAdminMenu() {
+                this.showAdminMenu = !this.showAdminMenu;
+            },
+            
+            async handleLogout() {
+                if (confirm('确定要退出登录吗？')) {
+                    try {
+                        // 关闭cae单
+                        this.showAdminMenu = false;
+                        
+                        const response = await fetch('/api/logout', {
+                            method: 'POST'
+                        });
+                        
+                        if (response.ok) {
+                            window.showToast('已退出登录', 'success');
+                            setTimeout(() => {
+                                window.location.href = '/login';
+                            }, 500);
+                        } else {
+                            window.showToast('退出失败，请重试', 'error');
+                            console.error('退出失败: HTTP', response.status);
+                        }
+                    } catch (error) {
+                        window.showToast('退出失败，请重试', 'error');
+                        console.error('退出失败:', error);
+                    }
+                } else {
+                    this.showAdminMenu = false;
+                }
+            }
+        }
+    }
+</script>
+
+<style>
+    .no-scrollbar::-webkit-scrollbar {
+        display: none;
+    }
+    .no-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
+</style>
+{% endblock %}

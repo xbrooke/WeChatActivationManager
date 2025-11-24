@@ -1,0 +1,381 @@
+{% extends "base.html" %}
+
+{% block title %}管理员登录 - API服务中心{% endblock %}
+
+{% block extra_css %}
+<style>
+    .login-background {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #4facfe 75%, #00f2fe 100%);
+        background-size: 400% 400%;
+        animation: gradientShift 15s ease infinite;
+    }
+    
+    @keyframes gradientShift {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+    }
+    
+    .login-container {
+        backdrop-filter: blur(10px);
+        animation: slideUp 0.6s ease-out;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    @keyframes slideUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    .form-input {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        border: 2px solid #e5e7eb;
+        background-color: #fafbfc;
+    }
+    
+    .form-input:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        background-color: #ffffff;
+    }
+    
+    .form-input::placeholder {
+        color: #9ca3af;
+    }
+    
+    .login-button {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    }
+    
+    .login-button:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 30px rgba(102, 126, 234, 0.6);
+    }
+    
+    .login-button:active:not(:disabled) {
+        transform: translateY(0);
+    }
+    
+    .login-button:disabled {
+        opacity: 0.75;
+        cursor: not-allowed;
+    }
+    
+    .icon-box {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        animation: float 3s ease-in-out infinite;
+        box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+    }
+    
+    @keyframes float {
+        0%, 100% { transform: translateY(0px); }
+        50% { transform: translateY(-10px); }
+    }
+    
+    /* 加载动画 */
+    .spinner {
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        border: 3px solid rgba(255, 255, 255, 0.3);
+        border-radius: 50%;
+        border-top-color: white;
+        animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+    
+    /* 提示信息动画 */
+    .hint-message {
+        animation: slideInUp 0.4s ease-out;
+    }
+    
+    @keyframes slideInUp {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    /* 输入框组优化 */
+    .input-group {
+        position: relative;
+    }
+    
+    .input-group label {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 0.75rem;
+    }
+    
+    .input-group label i {
+        color: #9ca3af;
+        transition: color 0.3s ease;
+    }
+    
+    .input-group:focus-within label i {
+        color: #667eea;
+    }
+    
+    /* 复选框样式优化 */
+    .checkbox-group {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+    
+    .checkbox-group input[type="checkbox"] {
+        appearance: none;
+        -webkit-appearance: none;
+        width: 20px;
+        height: 20px;
+        border: 2px solid #d1d5db;
+        border-radius: 0.375rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        background-color: #ffffff;
+    }
+    
+    .checkbox-group input[type="checkbox"]:checked {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-color: transparent;
+        box-shadow: inset 0 0 0 2px white;
+    }
+    
+    .checkbox-group input[type="checkbox"]:focus {
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+    
+    .checkbox-group label {
+        cursor: pointer;
+        font-weight: 500;
+        user-select: none;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="login-background min-h-screen flex items-center justify-center p-4" x-data="loginForm()" @load="init()">
+    <!-- 装饰性背景元素 -->
+    <div class="absolute top-0 left-0 w-96 h-96 bg-white opacity-5 rounded-full -top-48 -left-48"></div>
+    <div class="absolute bottom-0 right-0 w-96 h-96 bg-white opacity-5 rounded-full -bottom-48 -right-48"></div>
+    
+    <div class="login-container bg-white rounded-2xl p-10 w-full max-w-md relative z-10">
+        <!-- 头部 -->
+        <div class="text-center mb-10">
+            <div class="inline-flex items-center justify-center w-20 h-20 rounded-full icon-box mb-6 text-white">
+                <i class="fas fa-shield-alt text-4xl"></i>
+            </div>
+            <h1 class="text-4xl font-bold text-gray-900 mb-2">后台管理</h1>
+            <p class="text-gray-500 text-sm">WeChat Auto Reply 系统</p>
+        </div>
+        
+        <!-- 初始化检查提示 -->
+        <template x-if="checking">
+            <div class="mb-6 p-4 bg-blue-50 rounded-lg flex items-center justify-center hint-message border border-blue-100">
+                <div class="spinner mr-3"></div>
+                <span class="text-sm text-blue-700 font-medium">正在检查登入状态...</span>
+            </div>
+        </template>
+        
+        <!-- 登入表单 -->
+        <form @submit.prevent="handleSubmit" class="space-y-5" :style="{ display: checking ? 'none' : 'block' }">
+            <!-- 用户名输入 -->
+            <div class="input-group">
+                <label for="username" class="block text-sm font-semibold text-gray-700">
+                    <i class="fas fa-user"></i>用户名
+                </label>
+                <div class="relative group">
+                    <input
+                        type="text"
+                        id="username"
+                        x-model="username"
+                        class="form-input block w-full px-4 py-3 rounded-xl text-gray-900 placeholder-gray-400 transition-all duration-300"
+                        placeholder="admin"
+                        autocomplete="username"
+                        :disabled="loading"
+                    />
+                    <div class="absolute inset-y-0 right-0 flex items-center pr-4 text-gray-300 group-focus-within:text-green-500 transition-colors">
+                        <i class="fas fa-check-circle hidden group-focus-within:block"></i>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 密码输入 -->
+            <div class="input-group">
+                <label for="password" class="block text-sm font-semibold text-gray-700">
+                    <i class="fas fa-lock"></i>密码
+                </label>
+                <div class="relative group">
+                    <input
+                        :type="showPassword ? 'text' : 'password'"
+                        id="password"
+                        x-model="password"
+                        class="form-input block w-full px-4 py-3 rounded-xl text-gray-900 placeholder-gray-400 transition-all duration-300"
+                        placeholder="••••••••"
+                        autocomplete="current-password"
+                        :disabled="loading"
+                    />
+                    <button
+                        type="button"
+                        @click="showPassword = !showPassword"
+                        class="absolute inset-y-0 right-0 flex items-center pr-4 text-gray-400 hover:text-gray-600 transition-colors"
+                        :disabled="loading"
+                    >
+                        <i :class="showPassword ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- 记住我选项 -->
+            <div class="flex items-center pt-2">
+                <div class="checkbox-group">
+                    <input
+                        type="checkbox"
+                        id="remember"
+                        x-model="remember"
+                        :disabled="loading"
+                    />
+                    <label for="remember" class="text-sm text-gray-600">
+                        记住我
+                    </label>
+                </div>
+            </div>
+            
+            <!-- 登录按钮 -->
+            <button
+                type="submit"
+                class="login-button w-full text-white font-semibold py-3 px-4 rounded-xl transition-all duration-300 flex items-center justify-center mt-8"
+                :disabled="loading"
+            >
+                <template x-if="loading">
+                    <span class="flex items-center">
+                        <i class="fas fa-spinner fa-spin mr-2"></i>
+                        登录中...
+                    </span>
+                </template>
+                <template x-if="!loading">
+                    <span class="flex items-center">
+                        <i class="fas fa-arrow-right-to-bracket mr-2"></i>
+                        登 录
+                    </span>
+                </template>
+            </button>
+        </form>
+
+    </div>
+</div>
+
+<script>
+    function loginForm() {
+        return {
+            username: '',
+            password: '',
+            showPassword: false,
+            remember: false,
+            loading: false,
+            checking: true,
+            
+            async init() {
+                // 检查用户是否已登录
+                try {
+                    const response = await fetch('/api/check-session', {
+                        cache: 'no-store',
+                        headers: {
+                            'Cache-Control': 'no-cache, no-store, max-age=0'
+                        }
+                    });
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        if (data.authenticated && data.user) {
+                            // 用户已登录，跳转到管理后台
+                            console.log('用户已登录:', data.user);
+                            window.showToast(`欢迎回来，${data.user}！`, 'success');
+                            setTimeout(() => {
+                                window.location.href = '/admin';
+                            }, 500);
+                            return;
+                        }
+                    }
+                } catch (error) {
+                    console.debug('检查会话失败:', error);
+                }
+                
+                // 加载保存的用户名
+                const savedUsername = localStorage.getItem('savedUsername');
+                if (savedUsername) {
+                    this.username = savedUsername;
+                    this.remember = true;
+                }
+                
+                this.checking = false;
+            },
+            
+            async handleSubmit() {
+                if (!this.username || !this.password) {
+                    window.showToast('请输入用户名和密码', 'error');
+                    return;
+                }
+                
+                this.loading = true;
+                
+                try {
+                    const response = await fetch('/api/login', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            username: this.username,
+                            password: this.password
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (response.ok && data.success) {
+                        // 应用记住我功能
+                        if (this.remember) {
+                            localStorage.setItem('savedUsername', this.username);
+                        } else {
+                            localStorage.removeItem('savedUsername');
+                        }
+                        
+                        window.showToast('登录成功，即将跳转...', 'success');
+                        setTimeout(() => {
+                            window.location.href = '/admin';
+                        }, 800);
+                    } else {
+                        window.showToast(data.message || '用户名或密码错误', 'error');
+                    }
+                } catch (error) {
+                    console.error('登录错误:', error);
+                    window.showToast('登录失败，请检查网络并重试', 'error');
+                } finally {
+                    this.loading = false;
+                }
+            }
+        }
+    }
+</script>
+{% endblock %}

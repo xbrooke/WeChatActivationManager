@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}API服务中心{% endblock %}</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    
+    <!-- Alpine.js -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    
+    <!-- HTMX -->
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    
+    <style>
+        :root {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif;
+            --primary-color: #3b82f6;
+            --secondary-color: #10b981;
+            --border-radius: 12px;
+            --transition: all 0.2s ease;
+        }
+        
+        body {
+            background-color: #f8fafc;
+            transition: background-color 0.3s ease;
+        }
+        
+        /* 滚动条样式 */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
+        
+        /* 卡片悬浮效果 */
+        .card-hover {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .card-hover:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 15px 30px -10px rgba(0, 0, 0, 0.15);
+        }
+        
+        /* 动画 */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        
+        /* 删除行动画 - 向上缩放淡出 */
+        @keyframes deleteRowOut {
+            0% {
+                opacity: 1;
+                max-height: auto;
+                transform: scaleY(1);
+            }
+            100% {
+                opacity: 0;
+                max-height: 0;
+                transform: scaleY(0.75);
+                padding: 0;
+            }
+        }
+        
+        /* 新增行动画 - 淡入 + 从上向下滑入 */
+        @keyframes addRowIn {
+            0% {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .row-add-animation {
+            animation: addRowIn 0.4s ease-out;
+        }
+        
+        /* 优化字段样式 */
+        .field-label {
+            font-size: 0.875rem;
+            color: #6b7280;
+            font-weight: 500;
+            letter-spacing: 0.3px;
+            text-transform: uppercase;
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+        
+        .field-value {
+            font-size: 1rem;
+            color: #1f2937;
+            font-weight: 500;
+            word-break: break-all;
+            padding: 0.5rem 0;
+        }
+        
+        .field-value.mono {
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 0.9rem;
+            background-color: #f3f4f6;
+            padding: 0.5rem 0.75rem;
+            border-radius: 0.375rem;
+            color: #374151;
+        }
+        
+        .field-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+        
+        .field-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .field-box {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            transition: all 0.2s ease;
+        }
+        
+        .field-box:hover {
+            background: #ffffff;
+            border-color: #d1d5db;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+        
+        .field-box.highlight {
+            background: linear-gradient(135deg, #eff6ff 0%, #f0f9ff 100%);
+            border-color: #bfdbfe;
+        }
+        
+        .field-box.error {
+            background: #fef2f2;
+            border-color: #fecaca;
+        }
+        
+        .field-box.success {
+            background: #f0fdf4;
+            border-color: #bbf7d0;
+        }
+        
+        /* 方法标签样式 */
+        .method-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.375rem 0.75rem;
+            border-radius: 0.375rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            min-width: 50px;
+            text-align: center;
+        }
+        
+        .method-badge.get {
+            background-color: #dbeafe;
+            color: #1e40af;
+        }
+        
+        .method-badge.post {
+            background-color: #dbeafe;
+            color: #1e40af;
+        }
+        
+        .method-badge.put {
+            background-color: #fed7aa;
+            color: #b45309;
+        }
+        
+        .method-badge.delete {
+            background-color: #fecaca;
+            color: #991b1b;
+        }
+        
+        /* API路径样式 */
+        .api-path {
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            background-color: #f3f4f6;
+            padding: 0.375rem 0.5rem;
+            border-radius: 0.25rem;
+            color: #374151;
+            font-size: 0.875rem;
+        }
+        
+        /* 信息流提示 */
+        .info-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.375rem;
+            padding: 0.375rem 0.75rem;
+            background: #eff6ff;
+            color: #0369a1;
+            border-radius: 0.375rem;
+            font-size: 0.8125rem;
+            font-weight: 500;
+        }
+        
+        /* Toast 动画 */
+        @keyframes toast-slide-in {
+            from {
+                transform: translateX(400px) translateY(-20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0) translateY(0);
+                opacity: 1;
+            }
+        }
+        
+        .toast-slide-in {
+            animation: toast-slide-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+        
+        @keyframes toast-slide-out {
+            from {
+                transform: translateX(0) translateY(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(400px) translateY(-20px);
+                opacity: 0;
+            }
+        }
+    </style>
+    
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="min-h-screen">
+    {% block content %}{% endblock %}
+    
+    <!-- Toast 通知容器 -->
+    <div id="toast-container" class="fixed top-6 right-6 z-50 flex flex-col gap-3" x-data="toastManager()">
+        <template x-for="toast in toasts" :key="toast.id">
+            <div class="bg-white rounded-xl shadow-xl p-5 min-w-[320px] max-w-[420px] flex items-start justify-between toast-slide-in border border-gray-100 overflow-hidden group hover:shadow-2xl transition-all duration-300"
+                 :class="{
+                    'border-l-4 border-green-500': toast.type === 'success',
+                    'border-l-4 border-blue-500': toast.type === 'info',
+                    'border-l-4 border-amber-500': toast.type === 'warning',
+                    'border-l-4 border-red-500': toast.type === 'error'
+                 }"
+                 x-transition>
+                <div class="flex items-start gap-3 flex-1 min-w-0">
+                    <!-- 图标 -->
+                    <div :class="{
+                        'text-green-500': toast.type === 'success',
+                        'text-blue-500': toast.type === 'info',
+                        'text-amber-500': toast.type === 'warning',
+                        'text-red-500': toast.type === 'error'
+                    }" class="mt-0.5 flex-shrink-0">
+                        <i :class="{
+                            'fas fa-check-circle': toast.type === 'success',
+                            'fas fa-info-circle': toast.type === 'info',
+                            'fas fa-exclamation-circle': toast.type === 'warning',
+                            'fas fa-times-circle': toast.type === 'error'
+                        }" class="text-lg"></i>
+                    </div>
+                    <!-- 消息内容 -->
+                    <div class="flex-1 min-w-0">
+                        <p class="text-sm font-medium text-gray-900 break-words" x-text="toast.message"></p>
+                        <template x-if="toast.description">
+                            <p class="text-xs text-gray-500 mt-1" x-text="toast.description"></p>
+                        </template>
+                    </div>
+                </div>
+                <!-- 关闭按钮 -->
+                <button @click="removeToast(toast.id)" class="ml-3 text-gray-400 hover:text-gray-600 flex-shrink-0 transition-colors duration-200" title="关闭">
+                    <i class="fas fa-times text-sm"></i>
+                </button>
+                <!-- 进度条 -->
+                <div class="absolute bottom-0 left-0 h-1 bg-gradient-to-r" 
+                     :class="{
+                        'from-green-500 to-green-400': toast.type === 'success',
+                        'from-blue-500 to-blue-400': toast.type === 'info',
+                        'from-amber-500 to-amber-400': toast.type === 'warning',
+                        'from-red-500 to-red-400': toast.type === 'error'
+                     }"
+                     :style="`width: ${toast.progress}%`"
+                     style="transition: width 0.05s linear;"></div>
+            </div>
+        </template>
+    </div>
+    
+    <script>
+        // Toast 通知管理器
+        function toastManager() {
+            return {
+                toasts: [],
+                
+                showToast(message, type = 'success', duration = 3000, description = '') {
+                    const id = Date.now() + Math.random();
+                    const toast = { 
+                        id, 
+                        message, 
+                        type, 
+                        duration,
+                        description,
+                        progress: 100,
+                        startTime: Date.now()
+                    };
+                    
+                    this.toasts.push(toast);
+                    
+                    // 不断更新进度条
+                    const progressInterval = setInterval(() => {
+                        const toast = this.toasts.find(t => t.id === id);
+                        if (!toast) {
+                            clearInterval(progressInterval);
+                            return;
+                        }
+                        
+                        const elapsed = Date.now() - toast.startTime;
+                        const progress = Math.max(0, 100 - (elapsed / duration) * 100);
+                        toast.progress = progress;
+                    }, 50);
+                    
+                    // 自动移除
+                    setTimeout(() => {
+                        clearInterval(progressInterval);
+                        this.removeToast(id);
+                    }, duration);
+                },
+                
+                removeToast(id) {
+                    this.toasts = this.toasts.filter(t => t.id !== id);
+                }
+            }
+        }
+        
+        // 全局 toast 函数
+        window.toast = {
+            success: (msg, duration = 3000, desc = '') => {
+                const container = document.getElementById('toast-container');
+                if (container.__alpine && container.__alpine.toastManager) {
+                    container.__alpine.toastManager.showToast(msg, 'success', duration, desc);
+                }
+            },
+            error: (msg, duration = 4000, desc = '') => {
+                const container = document.getElementById('toast-container');
+                if (container.__alpine && container.__alpine.toastManager) {
+                    container.__alpine.toastManager.showToast(msg, 'error', duration, desc);
+                }
+            },
+            info: (msg, duration = 3000, desc = '') => {
+                const container = document.getElementById('toast-container');
+                if (container.__alpine && container.__alpine.toastManager) {
+                    container.__alpine.toastManager.showToast(msg, 'info', duration, desc);
+                }
+            },
+            warning: (msg, duration = 3500, desc = '') => {
+                const container = document.getElementById('toast-container');
+                if (container.__alpine && container.__alpine.toastManager) {
+                    container.__alpine.toastManager.showToast(msg, 'warning', duration, desc);
+                }
+            }
+        };
+        
+        // 全局 showToast 函数（与前端代码兼容）
+        window.showToast = function(message, type = 'success', duration = 3000) {
+            // 优先使用 Alpine 对象
+            const container = document.getElementById('toast-container');
+            if (container && container.__alpine && container.__alpine.toastManager) {
+                container.__alpine.toastManager.showToast(message, type, duration);
+            } else {
+                // 回退: 使用 DOM 方案
+                showToastFallback(message, type, duration);
+            }
+        };
+        
+        // 回退方案: 挥不到 Alpine 时的 DOM 处理
+        function showToastFallback(message, type = 'success', duration = 3000) {
+            const toastContainer = document.getElementById('toast-container');
+            if (!toastContainer) return;
+            
+            const toastId = Date.now();
+            const toastDiv = document.createElement('div');
+            
+            const typeClass = {
+                'success': 'border-l-4 border-green-500 bg-white',
+                'error': 'border-l-4 border-red-500 bg-white',
+                'info': 'border-l-4 border-blue-500 bg-white',
+                'warning': 'border-l-4 border-amber-500 bg-white'
+            }[type] || 'border-l-4 border-green-500 bg-white';
+            
+            const iconClass = {
+                'success': 'fas fa-check-circle text-green-500',
+                'error': 'fas fa-times-circle text-red-500',
+                'info': 'fas fa-info-circle text-blue-500',
+                'warning': 'fas fa-exclamation-circle text-amber-500'
+            }[type] || 'fas fa-check-circle text-green-500';
+            
+            toastDiv.className = `rounded-xl shadow-xl p-5 min-w-[320px] max-w-[420px] flex items-start justify-between toast-slide-in border border-gray-100 overflow-hidden group hover:shadow-2xl transition-all duration-300 relative ${typeClass}`;
+            toastDiv.innerHTML = `
+                <div class="flex items-start gap-3 flex-1 min-w-0">
+                    <div class="mt-0.5 flex-shrink-0">
+                        <i class="${iconClass} text-lg"></i>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-sm font-medium text-gray-900 break-words">${message}</p>
+                    </div>
+                </div>
+                <button class="ml-3 text-gray-400 hover:text-gray-600 flex-shrink-0 transition-colors duration-200" onclick="this.closest('div').remove()">
+                    <i class="fas fa-times text-sm"></i>
+                </button>
+                <div class="absolute bottom-0 left-0 h-1 progress-bar" style="width: 100%; transition: width 0.05s linear;"></div>
+            `;
+            
+            toastContainer.appendChild(toastDiv);
+            
+            // 进度条动画
+            const progressBar = toastDiv.querySelector('.progress-bar');
+            const startTime = Date.now();
+            
+            const animate = () => {
+                const elapsed = Date.now() - startTime;
+                const progress = Math.max(0, 100 - (elapsed / duration) * 100);
+                progressBar.style.width = progress + '%';
+                
+                if (progress > 0) {
+                    requestAnimationFrame(animate);
+                }
+            };
+            
+            animate();
+            
+            // 自动移除
+            setTimeout(() => {
+                if (toastDiv.parentElement) {
+                    toastDiv.style.opacity = '0';
+                    toastDiv.style.transition = 'opacity 0.3s ease-out';
+                    setTimeout(() => toastDiv.remove(), 300);
+                }
+            }, duration);
+        };
+        
+        // HTMX 事件监听
+        document.body.addEventListener('htmx:afterSwap', (event) => {
+            // 可以在这里添加全局的 HTMX 事件处理
+        });
+    </script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

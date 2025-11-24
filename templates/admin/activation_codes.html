@@ -1,0 +1,717 @@
+{% extends "admin/layout.html" %}
+
+{% block page_title %}激活码管理{% endblock %}
+
+{% block page_content %}
+<div class="space-y-6" x-data="activationCodesData()">
+    <!-- 页面标题 -->
+    <div class="fade-in">
+        <h1 class="text-2xl font-bold text-gray-800">激活码管理</h1>
+        <p class="text-gray-500 mt-1">管理和监控所有激活码的状态和使用情况</p>
+    </div>
+    
+    <!-- 操作栏 -->
+    <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 fade-in">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div class="relative">
+                <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">
+                    <i class="fas fa-search"></i>
+                </span>
+                <input
+                    type="text"
+                    x-model="searchTerm"
+                    @input="filterCodes()"
+                    placeholder="搜索激活码或用户..."
+                    class="block w-full md:w-72 pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                />
+            </div>
+            
+            <div class="flex gap-2 items-center">
+                <select 
+                    x-model="statusFilter"
+                    @change="filterCodes()"
+                    class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200">
+                    <option value="all">全部状态</option>
+                    <option value="unused">未使用</option>
+                    <option value="used">已使用</option>
+                    <option value="expired">已过期</option>
+                </select>
+                
+                <button 
+                    @click="showAddModal = true"
+                    class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-200 flex items-center">
+                    <i class="fas fa-plus mr-2"></i>生成激活码
+                </button>
+                
+                <button 
+                    @click="showBatchModal = true"
+                    class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all duration-200 flex items-center">
+                    <i class="fas fa-bolt mr-2"></i>批量生成
+                </button>
+                
+                <button 
+                    v-if="selectedCodes.length > 0"
+                    @click="deleteSelectedCodes()"
+                    class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all duration-200 flex items-center">
+                    <i class="fas fa-trash mr-2"></i>删除选中 (<span x-text="selectedCodes.length"></span>)
+                </button>
+                
+                <div class="relative group">
+                    <button 
+                        class="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-all duration-200 flex items-center">
+                        <i class="fas fa-fire mr-2"></i>一键删除
+                        <i class="fas fa-chevron-down ml-1"></i>
+                    </button>
+                    <div class="hidden group-hover:block absolute right-0 mt-0 w-48 bg-white rounded-lg shadow-xl border border-gray-200 z-10">
+                        <button 
+                            @click="deleteAllUnused()"
+                            class="w-full text-left px-4 py-2 hover:bg-gray-100 first:rounded-t-lg text-gray-700 flex items-center">
+                            <i class="fas fa-trash mr-2 text-orange-500"></i>删除所有未使用
+                        </button>
+                        <button 
+                            @click="deleteAllExpired()"
+                            class="w-full text-left px-4 py-2 hover:bg-gray-100 last:rounded-b-lg text-gray-700 flex items-center">
+                            <i class="fas fa-trash mr-2 text-orange-500"></i>删除所有已过期
+                        </button>
+                        <div class="border-t border-gray-200"></div>
+                        <button 
+                            @click="deleteAllCodes()"
+                            class="w-full text-left px-4 py-2 hover:bg-red-50 last:rounded-b-lg text-red-700 flex items-center">
+                            <i class="fas fa-exclamation-triangle mr-2"></i>删除所有激活码
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 激活码表格 -->
+    <div class="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100 fade-in">
+        <template x-if="loading">
+            <div class="p-12 text-center">
+                <div class="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+                <p class="mt-4 text-gray-500">加载中...</p>
+            </div>
+        </template>
+        
+        <template x-if="!loading && filteredCodes.length === 0">
+            <div class="p-12 text-center">
+                <div class="text-6xl mb-4 text-blue-300">
+                    <i class="fas fa-key"></i>
+                </div>
+                <p class="text-lg text-gray-500">暂无激活码</p>
+                <button 
+                    @click="showAddModal = true"
+                    class="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center mx-auto">
+                    <i class="fas fa-plus mr-2"></i>生成激活码
+                </button>
+            </div>
+        </template>
+        
+        <template x-if="!loading && filteredCodes.length > 0">
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <input type="checkbox" @change="toggleSelectAll()" :checked="selectedCodes.length === filteredCodes.length && filteredCodes.length > 0" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" />
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">激活码</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">用户ID</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">状态</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">类型</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">创建时间</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">过期时间</th>
+                            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        <template x-for="code in filteredCodes" :key="code.id">
+                            <tr class="hover:bg-gray-50 transition-colors duration-200" :class="code._deleting ? 'opacity-0 scale-95' : ''">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono font-medium text-gray-900">
+                                    <input type="checkbox" @change="toggleCode(code.id)" :checked="selectedCodes.includes(code.id)" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" />
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono font-medium">
+                                    <span class="inline-flex items-center px-3 py-1 rounded-lg bg-blue-50 text-blue-700 border border-blue-200 font-semibold">
+                                        <i class="fas fa-key mr-1 text-blue-600"></i>
+                                        <span x-text="code.code"></span>
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                    <template x-if="code.openid">
+                                        <span class="inline-flex items-center px-3 py-1 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-medium">
+                                            <i class="fas fa-user-check text-emerald-600 mr-1"></i>
+                                            <code class="font-mono" x-text="code.openid.substring(0, 12) + '...'"></code>
+                                        </span>
+                                    </template>
+                                    <template x-if="!code.openid">
+                                        <span class="inline-flex items-center px-3 py-1 rounded-lg bg-gray-100 text-gray-600 border border-gray-300 text-xs font-medium">
+                                            <i class="fas fa-unlink text-gray-400 mr-1"></i>
+                                            未绑定
+                                        </span>
+                                    </template>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <template x-if="code.status === 'unused'">
+                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-gradient-to-r from-green-100 to-emerald-100 text-green-800 border border-green-300">
+                                            <i class="fas fa-circle text-green-600 mr-1 text-xs"></i>
+                                            未使用
+                                        </span>
+                                    </template>
+                                    <template x-if="code.status === 'used'">
+                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-800 border border-gray-300">
+                                            <i class="fas fa-check-circle text-gray-600 mr-1"></i>
+                                            已使用
+                                        </span>
+                                    </template>
+                                    <template x-if="code.status === 'expired'">
+                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-800 border border-red-300">
+                                            <i class="fas fa-times-circle text-red-600 mr-1"></i>
+                                            已过期
+                                        </span>
+                                    </template>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <template x-if="code.isVIP">
+                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-gradient-to-r from-purple-100 to-pink-100 text-purple-800 border border-purple-200">
+                                            <i class="fas fa-crown mr-1 text-purple-600"></i>
+                                            VIP激活码
+                                        </span>
+                                    </template>
+                                    <template x-if="!code.isVIP">
+                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 border border-blue-200">
+                                            <i class="fas fa-user mr-1 text-blue-600"></i>
+                                            普通激活码
+                                        </span>
+                                    </template>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                    <div class="flex items-center">
+                                        <i class="fas fa-calendar-plus text-blue-400 mr-2"></i>
+                                        <span x-text="new Date(code.createdAt).toLocaleString('zh-CN')"></span>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                    <div class="flex items-center">
+                                        <i class="fas fa-hourglass-end text-orange-400 mr-2"></i>
+                                        <span x-text="new Date(code.expiresAt).toLocaleString('zh-CN')"></span>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                    <div class="flex justify-end space-x-2">
+                                        <button 
+                                            @click="invalidateCode(code.id)"
+                                            class="text-yellow-600 hover:text-yellow-900 transition-colors duration-200 p-1"
+                                            title="作废">
+                                            <i class="fas fa-ban"></i>
+                                        </button>
+                                        <button 
+                                            @click="deleteCode(code.id)"
+                                            class="text-red-600 hover:text-red-900 transition-colors duration-200 p-1"
+                                            title="删除">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+        </template>
+    </div>
+    
+    <!-- 生成激活码弹窗 -->
+    <template x-if="showAddModal">
+        <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50" @click.self="showAddModal = false">
+            <div class="bg-white rounded-xl shadow-lg p-6 w-full max-w-md">
+                <h3 class="text-lg font-semibold mb-4 text-gray-800">生成新激活码</h3>
+                
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">激活码格式</label>
+                        <select 
+                            x-model="generateForm.format_type"
+                            class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200">
+                            <option value="ALPHANUMERIC">字母+数字 (ALPHANUMERIC)</option>
+                            <option value="NUMERIC">纯数字 (NUMERIC)</option>
+                            <option value="ALPHA">纯字母 (ALPHA)</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">激活码长度</label>
+                        <input 
+                            type="range" 
+                            x-model.number="generateForm.length"
+                            min="4"
+                            max="32"
+                            class="block w-full"
+                        />
+                        <div class="text-center text-sm text-gray-600 mt-2" x-text="generateForm.length + '位'"></div>
+                    </div>
+                    
+                    <div class="flex items-center">
+                        <input 
+                            type="checkbox" 
+                            x-model="generateForm.is_vip"
+                            id="vipToggle"
+                            class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                        />
+                        <label for="vipToggle" class="ml-2 block text-sm text-gray-700">生成VIP激活码</label>
+                    </div>
+                    
+                    <div class="pt-4 flex justify-end space-x-3">
+                        <button 
+                            @click="showAddModal = false"
+                            class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-all duration-200">
+                            取消
+                        </button>
+                        <button 
+                            @click="generateCode()"
+                            class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-200">
+                            生成
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
+    
+    <!-- 批量生成弹窗 -->
+    <template x-if="showBatchModal">
+        <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50" @click.self="showBatchModal = false">
+            <div class="bg-white rounded-xl shadow-lg p-6 w-full max-w-md">
+                <h3 class="text-lg font-semibold mb-4 text-gray-800">批量生成激活码</h3>
+                
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">生成数量</label>
+                        <input 
+                            type="number" 
+                            x-model.number="batchForm.count"
+                            min="1"
+                            max="1000"
+                            placeholder="输入数量"
+                            class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                        />
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">激活码格式</label>
+                        <select 
+                            x-model="batchForm.format_type"
+                            class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200">
+                            <option value="ALPHANUMERIC">字母+数字 (ALPHANUMERIC)</option>
+                            <option value="NUMERIC">纯数字 (NUMERIC)</option>
+                            <option value="ALPHA">纯字母 (ALPHA)</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">激活码长度</label>
+                        <input 
+                            type="range" 
+                            x-model.number="batchForm.length"
+                            min="4"
+                            max="32"
+                            class="block w-full"
+                        />
+                        <div class="text-center text-sm text-gray-600 mt-2" x-text="batchForm.length + '位'"></div>
+                    </div>
+                    
+                    <div class="flex items-center">
+                        <input 
+                            type="checkbox" 
+                            x-model="batchForm.is_vip"
+                            id="batchVipToggle"
+                            class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                        />
+                        <label for="batchVipToggle" class="ml-2 block text-sm text-gray-700">生成VIP激活码</label>
+                    </div>
+                    
+                    <div class="pt-4 flex justify-end space-x-3">
+                        <button 
+                            @click="showBatchModal = false"
+                            class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-all duration-200">
+                            取消
+                        </button>
+                        <button 
+                            @click="batchGenerate()"
+                            class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all duration-200">
+                            生成
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
+</div>
+
+<script>
+function activationCodesData() {
+    return {
+        codes: [],
+        filteredCodes: [],
+        searchTerm: '',
+        statusFilter: 'all',
+        showAddModal: false,
+        showBatchModal: false,
+        loading: false,
+        selectedCodes: [],
+        generateForm: {
+            format_type: 'ALPHANUMERIC',
+            length: 8,
+            is_vip: false
+        },
+        batchForm: {
+            format_type: 'ALPHANUMERIC',
+            length: 8,
+            count: 10,
+            is_vip: false
+        },
+        
+        async loadCodes() {
+            try {
+                const response = await fetch(`/api/codes?t=${Date.now()}`, {
+                    cache: 'no-store',
+                    headers: {
+                        'Cache-Control': 'no-cache, no-store, max-age=0'
+                    }
+                });
+                this.codes = await response.json();
+                this.filterCodes();
+                this.loading = false;
+            } catch (error) {
+                console.error('加载激活码失败:', error);
+                this.loading = false;
+            }
+        },
+        
+        filterCodes() {
+            this.filteredCodes = this.codes.filter(code => {
+                const matchSearch = code.code.includes(this.searchTerm);
+                const matchStatus = this.statusFilter === 'all' || code.status === this.statusFilter;
+                return matchSearch && matchStatus;
+            });
+        },
+        
+        toggleCode(codeId) {
+            const index = this.selectedCodes.indexOf(codeId);
+            if (index > -1) {
+                this.selectedCodes.splice(index, 1);
+            } else {
+                this.selectedCodes.push(codeId);
+            }
+        },
+        
+        toggleSelectAll() {
+            if (this.selectedCodes.length === this.filteredCodes.length) {
+                this.selectedCodes = [];
+            } else {
+                this.selectedCodes = this.filteredCodes.map(c => c.id);
+            }
+        },
+        
+        generateCode() {
+            fetch('/api/codes', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ is_vip: this.generateForm.is_vip })
+            })
+            .then(response => {
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                return response.json();
+            })
+            .then(data => {
+                if (data && data.success === true) {
+                    window.showToast('激活码已生成', 'success');
+                    this.showAddModal = false;
+                    // 不仅要等待，还要一得再一得地刷新！
+                    console.log('[DEBUG] generateCode success, reloading...');
+                    setTimeout(() => {
+                        window.location.reload(true); // 强制不使用缓存
+                    }, 800);
+                } else {
+                    window.showToast(data?.message || '生成失败', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('生成失败:', error);
+                window.showToast('生成失败，请重试', 'error');
+            });
+        },
+        
+        batchGenerate() {
+            fetch('/api/codes/batch', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ count: parseInt(this.batchForm.count), is_vip: this.batchForm.is_vip })
+            })
+            .then(response => {
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                return response.json();
+            })
+            .then(data => {
+                if (data && data.success === true) {
+                    window.showToast(`成功生成 ${this.batchForm.count} 个激活码`, 'success');
+                    this.showBatchModal = false;
+                    console.log('[DEBUG] batchGenerate success, reloading...');
+                    setTimeout(() => {
+                        window.location.reload(true);
+                    }, 800);
+                } else {
+                    window.showToast(data?.message || '批量生成失败', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('批量生成失败:', error);
+                window.showToast('批量生成失败，请重试', 'error');
+            });
+        },
+        
+        deleteCode(id) {
+            if (confirm('确定要删除这个激活码吗？')) {
+                fetch(`/api/codes/${id}`, { method: 'DELETE' })
+                .then(response => {
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                    window.showToast('激活码已删除', 'success');
+                    console.log('[DEBUG] deleteCode success, reloading...');
+                    setTimeout(() => {
+                        window.location.reload(true);
+                    }, 800);
+                })
+                .catch(error => {
+                    console.error('删除失败:', error);
+                    window.showToast('删除失败，请重试', 'error');
+                });
+            }
+        },
+        
+        invalidateCode(id) {
+            if (confirm('确定要作废这个激活码吗？')) {
+                fetch(`/api/codes/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: 'expired' })
+                })
+                .then(response => {
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                    window.showToast('激活码已作废', 'success');
+                    console.log('[DEBUG] invalidateCode success, reloading...');
+                    setTimeout(() => {
+                        window.location.reload(true);
+                    }, 800);
+                })
+                .catch(error => {
+                    console.error('作废失败:', error);
+                    window.showToast('操作失败，请重试', 'error');
+                });
+            }
+        },
+        
+        deleteSelectedCodes() {
+            // 仅删除选中的，不是所有的
+            const count = this.selectedCodes.length;
+            if (count === 0) {
+                window.showToast('请先选择要删除的激活码', 'info');
+                return;
+            }
+            if (!confirm(`确定要删除选中的 ${count} 个激活码吗？`)) {
+                return;
+            }
+            
+            let completed = 0;
+            let successCount = 0;
+            const selectedCopy = [...this.selectedCodes];
+            
+            selectedCopy.forEach(codeId => {
+                fetch(`/api/codes/${codeId}`, { method: 'DELETE' })
+                .then(response => {
+                    if (response.ok) successCount++;
+                    completed++;
+                    if (completed === selectedCopy.length) {
+                        if (successCount > 0) {
+                            window.showToast(`成功删除 ${successCount} 个激活码`, 'success');
+                            console.log('[DEBUG] deleteSelectedCodes success, reloading...');
+                            setTimeout(() => location.reload(true), 800);
+                        } else {
+                            window.showToast('删除失败，请重试', 'error');
+                        }
+                    }
+                })
+                .catch(error => {
+                    completed++;
+                    if (completed === selectedCopy.length) {
+                        if (successCount > 0) {
+                            window.showToast(`成功删除 ${successCount} 个激活码`, 'success');
+                            setTimeout(() => location.reload(true), 800);
+                        } else {
+                            window.showToast('删除失败，请重试', 'error');
+                        }
+                    }
+                });
+            });
+        },
+        
+        deleteAllUnused() {
+            const unusedCount = this.codes.filter(c => c.status === 'unused').length;
+            if (unusedCount === 0) {
+                window.showToast('暂无未使用的激活码', 'info');
+                return;
+            }
+            if (!confirm(`确定要删除所有 ${unusedCount} 个未使用的激活码吗？此操作不可撤销！`)) {
+                return;
+            }
+            
+            const unusedIds = this.codes.filter(c => c.status === 'unused').map(c => c.id);
+            let completed = 0;
+            let successCount = 0;
+            
+            unusedIds.forEach(codeId => {
+                fetch(`/api/codes/${codeId}`, { method: 'DELETE' })
+                .then(response => {
+                    // ✅ 只检查 HTTP 状态码
+                    if (response.ok) {
+                        successCount++;
+                    }
+                    completed++;
+                    if (completed === unusedIds.length) {
+                        if (successCount > 0) {
+                            window.showToast(`成功删除 ${successCount} 个未使用的激活码`, 'success');
+                            // ✅ 强制刷新页面
+                            setTimeout(() => location.reload(), 500);
+                        } else {
+                            window.showToast('删除失败，请重试', 'error');
+                        }
+                    }
+                })
+                .catch(() => {
+                    completed++;
+                    if (completed === unusedIds.length) {
+                        if (successCount > 0) {
+                            window.showToast(`成功删除 ${successCount} 个未使用的激活码`, 'success');
+                            setTimeout(() => location.reload(), 500);
+                        } else {
+                            window.showToast('删除失败，请重试', 'error');
+                        }
+                    }
+                });
+            });
+        },
+        
+        deleteAllExpired() {
+            const expiredCount = this.codes.filter(c => c.status === 'expired').length;
+            if (expiredCount === 0) {
+                window.showToast('暂无已过期的激活码', 'info');
+                return;
+            }
+            if (!confirm(`确定要删除所有 ${expiredCount} 个已过期的激活码吗？此操作不可撤销！`)) {
+                return;
+            }
+            
+            const expiredIds = this.codes.filter(c => c.status === 'expired').map(c => c.id);
+            let completed = 0;
+            let successCount = 0;
+            
+            expiredIds.forEach(codeId => {
+                fetch(`/api/codes/${codeId}`, { method: 'DELETE' })
+                .then(response => {
+                    // ✅ 只检查 HTTP 状态码
+                    if (response.ok) {
+                        successCount++;
+                    }
+                    completed++;
+                    if (completed === expiredIds.length) {
+                        if (successCount > 0) {
+                            window.showToast(`成功删除 ${successCount} 个已过期的激活码`, 'success');
+                            // ✅ 强制刷新页面
+                            setTimeout(() => location.reload(), 500);
+                        } else {
+                            window.showToast('删除失败，请重试', 'error');
+                        }
+                    }
+                })
+                .catch(() => {
+                    completed++;
+                    if (completed === expiredIds.length) {
+                        if (successCount > 0) {
+                            window.showToast(`成功删除 ${successCount} 个已过期的激活码`, 'success');
+                            setTimeout(() => location.reload(), 500);
+                        } else {
+                            window.showToast('删除失败，请重试', 'error');
+                        }
+                    }
+                });
+            });
+        },
+        
+        deleteAllCodes() {
+            if (!confirm('⚠️ 确定要删除所有激活码吗？此操作不可撤销！')) {
+                return;
+            }
+            if (!confirm('⚠️⚠️ 最后确认：真的要删除所有 ' + this.codes.length + ' 个激活码吗？')) {
+                return;
+            }
+            
+            let completed = 0;
+            let successCount = 0;
+            const allIds = this.codes.map(c => c.id);
+            
+            allIds.forEach(codeId => {
+                fetch(`/api/codes/${codeId}`, { method: 'DELETE' })
+                .then(response => {
+                    // ✅ 只检查 HTTP 状态码
+                    if (response.ok) {
+                        successCount++;
+                    }
+                    completed++;
+                    if (completed === allIds.length) {
+                        if (successCount > 0) {
+                            window.showToast(`成功删除全部 ${successCount} 个激活码`, 'success');
+                            // ✅ 强制刷新页面
+                            setTimeout(() => location.reload(), 500);
+                        } else {
+                            window.showToast('删除失败，请重试', 'error');
+                        }
+                    }
+                })
+                .catch(() => {
+                    completed++;
+                    if (completed === allIds.length) {
+                        if (successCount > 0) {
+                            window.showToast(`成功删除 ${successCount} 个激活码`, 'success');
+                            setTimeout(() => location.reload(), 500);
+                        } else {
+                            window.showToast('删除失败，请重试', 'error');
+                        }
+                    }
+                });
+            });
+        },
+        
+        init() {
+            this.loading = true;
+            this.loadCodes();
+        }
+    };
+}
+</script>
+
+<style>
+.fade-in {
+    animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+</style>
+{% endblock %}

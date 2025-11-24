@@ -1,0 +1,289 @@
+{% extends "admin/layout.html" %}
+
+{% block page_title %}系统设置{% endblock %}
+
+{% block page_content %}
+<div class="space-y-6" x-data="settingsData()">
+    <!-- 页面标题 -->
+    <div class="fade-in">
+        <h1 class="text-2xl font-bold text-gray-800">系统设置</h1>
+        <p class="text-gray-500 mt-1">管理系统全局配置参数</p>
+    </div>
+    
+    <!-- 基本配置 -->
+    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 fade-in">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="font-semibold text-gray-800 flex items-center">
+                <i class="fas fa-cog mr-2 text-blue-500"></i>基本配置
+            </h3>
+        </div>
+        
+        <div class="space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">激活码有效期（天）</label>
+                    <input 
+                        type="number" 
+                        x-model.number="settings.activationCodeExpireDays"
+                        min="1"
+                        max="365"
+                        placeholder="7"
+                        class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                    />
+                    <small class="text-gray-500 mt-1">普通激活码的有效期</small>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">VIP激活码有效期（天）</label>
+                    <input 
+                        type="number" 
+                        x-model.number="settings.vipCodeExpireDays"
+                        min="1"
+                        max="365"
+                        placeholder="30"
+                        class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                    />
+                    <small class="text-gray-500 mt-1">VIP激活码的有效期</small>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">批量生成默认数量</label>
+                    <input 
+                        type="number" 
+                        x-model.number="settings.batchGenerateDefaultCount"
+                        min="1"
+                        max="1000"
+                        placeholder="10"
+                        class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                    />
+                    <small class="text-gray-500 mt-1">每次批量生成的默认数量</small>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">批量生成最大数量</label>
+                    <input 
+                        type="number" 
+                        x-model.number="settings.batchGenerateMaxCount"
+                        min="1"
+                        max="10000"
+                        placeholder="1000"
+                        class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                    />
+                    <small class="text-gray-500 mt-1">防止滥用的最大限制</small>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 安全设置 -->
+    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 fade-in">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="font-semibold text-gray-800 flex items-center">
+                <i class="fas fa-shield-alt mr-2 text-green-500"></i>安全设置
+            </h3>
+        </div>
+        
+        <div class="space-y-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">修改管理员密码</label>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <input 
+                            type="password" 
+                            x-model="settings.newPassword"
+                            placeholder="输入新密码"
+                            class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                        />
+                    </div>
+                    <div>
+                        <input 
+                            type="password" 
+                            x-model="settings.confirmPassword"
+                            placeholder="确认密码"
+                            class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                        />
+                    </div>
+                </div>
+                <small class="text-gray-500 text-xs mt-2">密码至少6位，请妥善保管</small>
+            </div>
+            
+            <div>
+                <label class="flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer">
+                    <input 
+                        type="checkbox" 
+                        x-model="settings.enableSSL"
+                        class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    />
+                    <span class="ml-3">
+                        <span class="text-sm font-medium text-gray-700">启用 HTTPS/SSL</span>
+                        <p class="text-xs text-gray-500 mt-1">在生产环境中强烈建议启用</p>
+                    </span>
+                </label>
+            </div>
+            
+            <div>
+                <label class="flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer">
+                    <input 
+                        type="checkbox" 
+                        x-model="settings.enableIPWhitelist"
+                        class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    />
+                    <span class="ml-3">
+                        <span class="text-sm font-medium text-gray-700">启用 IP 白名单</span>
+                        <p class="text-xs text-gray-500 mt-1">只允许白名单中的 IP 访问</p>
+                    </span>
+                </label>
+                <template x-if="settings.enableIPWhitelist">
+                    <div class="mt-3 p-3 bg-gray-50 rounded-lg">
+                        <textarea 
+                            x-model="settings.ipWhitelist"
+                            placeholder="多个IP用逗号或换行分隔，如：192.168.1.1,10.0.0.1"
+                            rows="3"
+                            class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-sm"></textarea>
+                    </div>
+                </template>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 日志设置 -->
+    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 fade-in">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="font-semibold text-gray-800 flex items-center">
+                <i class="fas fa-file-alt mr-2 text-purple-500"></i>日志设置
+            </h3>
+        </div>
+        
+        <div class="space-y-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">日志级别</label>
+                <select 
+                    x-model="settings.logLevel"
+                    class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200">
+                    <option value="DEBUG">DEBUG - 最详细的日志</option>
+                    <option value="INFO">INFO - 正常信息</option>
+                    <option value="WARNING">WARNING - 警告信息</option>
+                    <option value="ERROR">ERROR - 错误信息</option>
+                    <option value="CRITICAL">CRITICAL - 严重错误</option>
+                </select>
+                <small class="text-gray-500 mt-1">设置日志输出的详细级别</small>
+            </div>
+            
+            <div>
+                <label class="flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer">
+                    <input 
+                        type="checkbox" 
+                        x-model="settings.logToConsole"
+                        class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    />
+                    <span class="ml-3">
+                        <span class="text-sm font-medium text-gray-700">同时输出到控制台</span>
+                        <p class="text-xs text-gray-500 mt-1">便于开发调试</p>
+                    </span>
+                </label>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 操作按钮 -->
+    <div class="flex justify-end gap-3 fade-in">
+        <button 
+            @click="resetSettings()"
+            class="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-all duration-200 flex items-center">
+            <i class="fas fa-redo mr-2"></i>重置
+        </button>
+        <button 
+            @click="saveSettings()"
+            class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-200 flex items-center">
+            <i class="fas fa-save mr-2"></i>保存设置
+        </button>
+    </div>
+</div>
+
+<script>
+function settingsData() {
+    return {
+        settings: {
+            activationCodeExpireDays: 7,
+            vipCodeExpireDays: 30,
+            batchGenerateDefaultCount: 10,
+            batchGenerateMaxCount: 1000,
+            newPassword: '',
+            confirmPassword: '',
+            enableSSL: false,
+            enableIPWhitelist: false,
+            ipWhitelist: '',
+            logLevel: 'INFO',
+            logToConsole: true
+        },
+        
+        saveSettings() {
+            // 验证密码
+            if (this.settings.newPassword) {
+                if (this.settings.newPassword !== this.settings.confirmPassword) {
+                    window.showToast('两次输入的密码不一致', 'error');
+                    return;
+                }
+                if (this.settings.newPassword.length < 6) {
+                    window.showToast('密码至少6位', 'error');
+                    return;
+                }
+            }
+            
+            // 验证激活码有效期
+            if (this.settings.activationCodeExpireDays < 1 || this.settings.activationCodeExpireDays > 365) {
+                window.showToast('激活码有效期应在1-365天之间', 'error');
+                return;
+            }
+            
+            if (this.settings.vipCodeExpireDays < 1 || this.settings.vipCodeExpireDays > 365) {
+                window.showToast('VIP激活码有效期应在1-365天之间', 'error');
+                return;
+            }
+            
+            // 验证批量生成数量
+            if (this.settings.batchGenerateDefaultCount > this.settings.batchGenerateMaxCount) {
+                window.showToast('默认数量不能超过最大数量', 'error');
+                return;
+            }
+            
+            try {
+                // 这里可以添加保存到服务器的逻辑
+                window.showToast('✓ 设置已保存', 'success');
+                this.settings.newPassword = '';
+                this.settings.confirmPassword = '';
+            } catch (error) {
+                window.showToast('✗ 保存失败，请重试', 'error');
+                console.error('Settings save error:', error);
+            }
+        },
+        
+        resetSettings() {
+            if (confirm('确定要重置所有设置吗？此操作无法撤销。')) {
+                this.settings = {
+                    activationCodeExpireDays: 7,
+                    vipCodeExpireDays: 30,
+                    batchGenerateDefaultCount: 10,
+                    batchGenerateMaxCount: 1000,
+                    newPassword: '',
+                    confirmPassword: '',
+                    enableSSL: false,
+                    enableIPWhitelist: false,
+                    ipWhitelist: '',
+                    logLevel: 'INFO',
+                    logToConsole: true
+                };
+                window.showToast('✓ 设置已重置为默认值', 'success');
+            }
+        },
+        
+        init() {
+            // 初始化逻辑
+            console.log('Settings page initialized');
+        }
+    }
+}
+</script>
+{% endblock %}

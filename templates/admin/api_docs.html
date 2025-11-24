@@ -1,0 +1,461 @@
+{% extends "admin/layout.html" %}
+
+{% block page_title %}API接口文档{% endblock %}
+
+{% block page_content %}
+<div class="space-y-6">
+    <!-- 页面标题 -->
+    <div class="fade-in">
+        <h1 class="text-2xl font-bold text-gray-800">📚 API接口文档</h1>
+        <p class="text-gray-500 mt-1">项目所有接口说明与使用指南</p>
+    </div>
+
+    <!-- API列表 -->
+    <div class="grid grid-cols-1 gap-6">
+        <!-- 认证接口 -->
+        <div class="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
+            <div class="px-6 py-4 bg-gradient-to-r from-blue-50 to-blue-100 border-b border-blue-200">
+                <h2 class="text-lg font-bold text-blue-900 flex items-center">
+                    <i class="fas fa-lock mr-2"></i>认证接口
+                </h2>
+            </div>
+            <div class="divide-y">
+                <div class="p-6 hover:bg-gray-50 transition-colors">
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <h3 class="font-semibold text-gray-800">登录</h3>
+                            <p class="text-sm text-gray-500 mt-1">用户登录验证</p>
+                        </div>
+                        <span class="px-3 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded">POST</span>
+                    </div>
+                    <code class="block text-sm bg-gray-100 p-3 rounded mt-2 text-gray-700">/api/login</code>
+                    <p class="text-sm text-gray-600 mt-2"><strong>参数:</strong> username, password</p>
+                </div>
+                <div class="p-6 hover:bg-gray-50 transition-colors">
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <h3 class="font-semibold text-gray-800">登出</h3>
+                            <p class="text-sm text-gray-500 mt-1">用户退出登录</p>
+                        </div>
+                        <span class="px-3 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded">POST</span>
+                    </div>
+                    <code class="block text-sm bg-gray-100 p-3 rounded mt-2 text-gray-700">/api/logout</code>
+                </div>
+                <div class="p-6 hover:bg-gray-50 transition-colors">
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <h3 class="font-semibold text-gray-800">检查会话</h3>
+                            <p class="text-sm text-gray-500 mt-1">检查用户登录状态</p>
+                        </div>
+                        <span class="px-3 py-1 bg-blue-100 text-blue-700 text-xs font-semibold rounded">GET</span>
+                    </div>
+                    <code class="block text-sm bg-gray-100 p-3 rounded mt-2 text-gray-700">/api/check-session</code>
+                </div>
+            </div>
+        </div>
+
+        <!-- 激活码接口 -->
+        <div class="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
+            <div class="px-6 py-4 bg-gradient-to-r from-purple-50 to-purple-100 border-b border-purple-200">
+                <h2 class="text-lg font-bold text-purple-900 flex items-center">
+                    <i class="fas fa-key mr-2"></i>激活码接口
+                </h2>
+            </div>
+            <div class="divide-y">
+                <div class="p-6 hover:bg-gray-50 transition-colors">
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <h3 class="font-semibold text-gray-800">获取激活码列表</h3>
+                            <p class="text-sm text-gray-500 mt-1">需登录 (后台使用)</p>
+                        </div>
+                        <span class="px-3 py-1 bg-blue-100 text-blue-700 text-xs font-semibold rounded">GET</span>
+                    </div>
+                    <code class="block text-sm bg-gray-100 p-3 rounded mt-2 text-gray-700">/api/codes</code>
+                </div>
+                <div class="p-6 hover:bg-gray-50 transition-colors">
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <h3 class="font-semibold text-gray-800">添加激活码</h3>
+                            <p class="text-sm text-gray-500 mt-1">需登录 (后台使用)</p>
+                        </div>
+                        <span class="px-3 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded">POST</span>
+                    </div>
+                    <code class="block text-sm bg-gray-100 p-3 rounded mt-2 text-gray-700">/api/codes</code>
+                    <p class="text-sm text-gray-600 mt-2"><strong>参数:</strong> is_vip (可选)</p>
+                </div>
+                <div class="p-6 hover:bg-gray-50 transition-colors">
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <h3 class="font-semibold text-gray-800">生成激活码 (高级)</h3>
+                            <p class="text-sm text-gray-500 mt-1">需登录 (后台使用)</p>
+                        </div>
+                        <span class="px-3 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded">POST</span>
+                    </div>
+                    <code class="block text-sm bg-gray-100 p-3 rounded mt-2 text-gray-700">/api/codes/generate</code>
+                    <p class="text-sm text-gray-600 mt-2"><strong>参数:</strong> openid, length, format_type, is_vip</p>
+                </div>
+                <div class="p-6 hover:bg-gray-50 transition-colors">
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <h3 class="font-semibold text-gray-800">验证激活码 (客户端)</h3>
+                            <p class="text-sm text-gray-500 mt-1">无需登录 (客户端使用)</p>
+                        </div>
+                        <span class="px-3 py-1 bg-blue-100 text-blue-700 text-xs font-semibold rounded">GET/POST</span>
+                    </div>
+                    <code class="block text-sm bg-gray-100 p-3 rounded mt-2 text-gray-700">/api/validate-code</code>
+                    <p class="text-sm text-gray-600 mt-2"><strong>参数:</strong> code</p>
+                </div>
+                <div class="p-6 hover:bg-gray-50 transition-colors">
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <h3 class="font-semibold text-gray-800">使用激活码 (客户端)</h3>
+                            <p class="text-sm text-gray-500 mt-1">无需登录 (客户端使用)</p>
+                        </div>
+                        <span class="px-3 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded">GET/POST</span>
+                    </div>
+                    <code class="block text-sm bg-gray-100 p-3 rounded mt-2 text-gray-700">/api/use-code</code>
+                    <p class="text-sm text-gray-600 mt-2"><strong>参数:</strong> code</p>
+                </div>
+                <div class="p-6 hover:bg-gray-50 transition-colors">
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <h3 class="font-semibold text-gray-800">批量生成激活码</h3>
+                            <p class="text-sm text-gray-500 mt-1">需登录 (后台使用)</p>
+                        </div>
+                        <span class="px-3 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded">POST</span>
+                    </div>
+                    <code class="block text-sm bg-gray-100 p-3 rounded mt-2 text-gray-700">/api/codes/batch</code>
+                    <p class="text-sm text-gray-600 mt-2"><strong>参数:</strong> count, is_vip</p>
+                </div>
+                <div class="p-6 hover:bg-gray-50 transition-colors">
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <h3 class="font-semibold text-gray-800">删除激活码</h3>
+                            <p class="text-sm text-gray-500 mt-1">需登录 (后台使用)</p>
+                        </div>
+                        <span class="px-3 py-1 bg-red-100 text-red-700 text-xs font-semibold rounded">DELETE</span>
+                    </div>
+                    <code class="block text-sm bg-gray-100 p-3 rounded mt-2 text-gray-700">/api/codes/{code_id}</code>
+                </div>
+                <div class="p-6 hover:bg-gray-50 transition-colors">
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <h3 class="font-semibold text-gray-800">更新激活码</h3>
+                            <p class="text-sm text-gray-500 mt-1">需登录 (后台使用)</p>
+                        </div>
+                        <span class="px-3 py-1 bg-orange-100 text-orange-700 text-xs font-semibold rounded">PUT</span>
+                    </div>
+                    <code class="block text-sm bg-gray-100 p-3 rounded mt-2 text-gray-700">/api/codes/{code_id}</code>
+                </div>
+            </div>
+        </div>
+
+        <!-- 用户接口 -->
+        <div class="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
+            <div class="px-6 py-4 bg-gradient-to-r from-green-50 to-green-100 border-b border-green-200">
+                <h2 class="text-lg font-bold text-green-900 flex items-center">
+                    <i class="fas fa-users mr-2"></i>用户接口
+                </h2>
+            </div>
+            <div class="divide-y">
+                <div class="p-6 hover:bg-gray-50 transition-colors">
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <h3 class="font-semibold text-gray-800">获取用户列表</h3>
+                            <p class="text-sm text-gray-500 mt-1">需登录 (后台使用)</p>
+                        </div>
+                        <span class="px-3 py-1 bg-blue-100 text-blue-700 text-xs font-semibold rounded">GET</span>
+                    </div>
+                    <code class="block text-sm bg-gray-100 p-3 rounded mt-2 text-gray-700">/api/users</code>
+                </div>
+                <div class="p-6 hover:bg-gray-50 transition-colors">
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <h3 class="font-semibold text-gray-800">获取单个用户</h3>
+                            <p class="text-sm text-gray-500 mt-1">需登录 (后台使用)</p>
+                        </div>
+                        <span class="px-3 py-1 bg-blue-100 text-blue-700 text-xs font-semibold rounded">GET</span>
+                    </div>
+                    <code class="block text-sm bg-gray-100 p-3 rounded mt-2 text-gray-700">/api/users/{user_id}</code>
+                </div>
+                <div class="p-6 hover:bg-gray-50 transition-colors">
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <h3 class="font-semibold text-gray-800">添加用户</h3>
+                            <p class="text-sm text-gray-500 mt-1">需登录 (后台使用)</p>
+                        </div>
+                        <span class="px-3 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded">POST</span>
+                    </div>
+                    <code class="block text-sm bg-gray-100 p-3 rounded mt-2 text-gray-700">/api/users</code>
+                    <p class="text-sm text-gray-600 mt-2"><strong>参数:</strong> openId, nickname, avatar (可选)</p>
+                </div>
+                <div class="p-6 hover:bg-gray-50 transition-colors">
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <h3 class="font-semibold text-gray-800">更新用户信息</h3>
+                            <p class="text-sm text-gray-500 mt-1">需登录 (后台使用)</p>
+                        </div>
+                        <span class="px-3 py-1 bg-orange-100 text-orange-700 text-xs font-semibold rounded">PUT</span>
+                    </div>
+                    <code class="block text-sm bg-gray-100 p-3 rounded mt-2 text-gray-700">/api/users/{user_id}</code>
+                </div>
+                <div class="p-6 hover:bg-gray-50 transition-colors">
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <h3 class="font-semibold text-gray-800">删除用户</h3>
+                            <p class="text-sm text-gray-500 mt-1">需登录 (后台使用)</p>
+                        </div>
+                        <span class="px-3 py-1 bg-red-100 text-red-700 text-xs font-semibold rounded">DELETE</span>
+                    </div>
+                    <code class="block text-sm bg-gray-100 p-3 rounded mt-2 text-gray-700">/api/users/{user_id}</code>
+                </div>
+                <div class="p-6 hover:bg-gray-50 transition-colors">
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <h3 class="font-semibold text-gray-800">搜索用户</h3>
+                            <p class="text-sm text-gray-500 mt-1">需登录 (后台使用)</p>
+                        </div>
+                        <span class="px-3 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded">POST</span>
+                    </div>
+                    <code class="block text-sm bg-gray-100 p-3 rounded mt-2 text-gray-700">/api/users/search</code>
+                    <p class="text-sm text-gray-600 mt-2"><strong>参数:</strong> keyword</p>
+                </div>
+                <div class="p-6 hover:bg-gray-50 transition-colors">
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <h3 class="font-semibold text-gray-800">按状态获取用户</h3>
+                            <p class="text-sm text-gray-500 mt-1">需登录 (后台使用)</p>
+                        </div>
+                        <span class="px-3 py-1 bg-blue-100 text-blue-700 text-xs font-semibold rounded">GET</span>
+                    </div>
+                    <code class="block text-sm bg-gray-100 p-3 rounded mt-2 text-gray-700">/api/users/status/{status}</code>
+                    <p class="text-sm text-gray-600 mt-2"><strong>状态值:</strong> none, pending, activated</p>
+                </div>
+                <div class="p-6 hover:bg-gray-50 transition-colors">
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <h3 class="font-semibold text-gray-800">激活用户</h3>
+                            <p class="text-sm text-gray-500 mt-1">需登录 (后台使用)</p>
+                        </div>
+                        <span class="px-3 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded">POST</span>
+                    </div>
+                    <code class="block text-sm bg-gray-100 p-3 rounded mt-2 text-gray-700">/api/users/{user_id}/activate</code>
+                    <p class="text-sm text-gray-600 mt-2"><strong>参数:</strong> activationCode</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 数据统计接口 -->
+        <div class="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
+            <div class="px-6 py-4 bg-gradient-to-r from-orange-50 to-orange-100 border-b border-orange-200">
+                <h2 class="text-lg font-bold text-orange-900 flex items-center">
+                    <i class="fas fa-chart-bar mr-2"></i>数据统计接口
+                </h2>
+            </div>
+            <div class="divide-y">
+                <div class="p-6 hover:bg-gray-50 transition-colors">
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <h3 class="font-semibold text-gray-800">获取统计数据</h3>
+                            <p class="text-sm text-gray-500 mt-1">需登录 (后台使用)</p>
+                        </div>
+                        <span class="px-3 py-1 bg-blue-100 text-blue-700 text-xs font-semibold rounded">GET</span>
+                    </div>
+                    <code class="block text-sm bg-gray-100 p-3 rounded mt-2 text-gray-700">/api/statistics</code>
+                </div>
+                <div class="p-6 hover:bg-gray-50 transition-colors">
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <h3 class="font-semibold text-gray-800">获取活动日志</h3>
+                            <p class="text-sm text-gray-500 mt-1">需登录 (后台使用)</p>
+                        </div>
+                        <span class="px-3 py-1 bg-blue-100 text-blue-700 text-xs font-semibold rounded">GET</span>
+                    </div>
+                    <code class="block text-sm bg-gray-100 p-3 rounded mt-2 text-gray-700">/api/activities?limit=5</code>
+                </div>
+                <div class="p-6 hover:bg-gray-50 transition-colors">
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <h3 class="font-semibold text-gray-800">获取系统日志</h3>
+                            <p class="text-sm text-gray-500 mt-1">需登录 (后台使用)</p>
+                        </div>
+                        <span class="px-3 py-1 bg-blue-100 text-blue-700 text-xs font-semibold rounded">GET</span>
+                    </div>
+                    <code class="block text-sm bg-gray-100 p-3 rounded mt-2 text-gray-700">/api/logs?limit=500</code>
+                </div>
+                <div class="p-6 hover:bg-gray-50 transition-colors">
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <h3 class="font-semibold text-gray-800">清空系统日志</h3>
+                            <p class="text-sm text-gray-500 mt-1">需登录 (后台使用)</p>
+                        </div>
+                        <span class="px-3 py-1 bg-red-100 text-red-700 text-xs font-semibold rounded">DELETE</span>
+                    </div>
+                    <code class="block text-sm bg-gray-100 p-3 rounded mt-2 text-gray-700">/api/logs</code>
+                </div>
+            </div>
+        </div>
+
+        <!-- 自定义回复接口 -->
+        <div class="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
+            <div class="px-6 py-4 bg-gradient-to-r from-pink-50 to-pink-100 border-b border-pink-200">
+                <h2 class="text-lg font-bold text-pink-900 flex items-center">
+                    <i class="fas fa-comments mr-2"></i>自定义回复接口
+                </h2>
+            </div>
+            <div class="divide-y">
+                <div class="p-6 hover:bg-gray-50 transition-colors">
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <h3 class="font-semibold text-gray-800">获取触发关键词</h3>
+                            <p class="text-sm text-gray-500 mt-1">需登录 (后台使用)</p>
+                        </div>
+                        <span class="px-3 py-1 bg-blue-100 text-blue-700 text-xs font-semibold rounded">GET</span>
+                    </div>
+                    <code class="block text-sm bg-gray-100 p-3 rounded mt-2 text-gray-700">/api/trigger-keywords</code>
+                </div>
+                <div class="p-6 hover:bg-gray-50 transition-colors">
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <h3 class="font-semibold text-gray-800">保存触发关键词</h3>
+                            <p class="text-sm text-gray-500 mt-1">需登录 (后台使用)</p>
+                        </div>
+                        <span class="px-3 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded">POST</span>
+                    </div>
+                    <code class="block text-sm bg-gray-100 p-3 rounded mt-2 text-gray-700">/api/trigger-keywords</code>
+                </div>
+                <div class="p-6 hover:bg-gray-50 transition-colors">
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <h3 class="font-semibold text-gray-800">获取回复列表</h3>
+                            <p class="text-sm text-gray-500 mt-1">需登录 (后台使用)</p>
+                        </div>
+                        <span class="px-3 py-1 bg-blue-100 text-blue-700 text-xs font-semibold rounded">GET</span>
+                    </div>
+                    <code class="block text-sm bg-gray-100 p-3 rounded mt-2 text-gray-700">/api/replies</code>
+                </div>
+                <div class="p-6 hover:bg-gray-50 transition-colors">
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <h3 class="font-semibold text-gray-800">添加或更新回复</h3>
+                            <p class="text-sm text-gray-500 mt-1">需登录 (后台使用)</p>
+                        </div>
+                        <span class="px-3 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded">POST</span>
+                    </div>
+                    <code class="block text-sm bg-gray-100 p-3 rounded mt-2 text-gray-700">/api/replies</code>
+                </div>
+                <div class="p-6 hover:bg-gray-50 transition-colors">
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <h3 class="font-semibold text-gray-800">删除回复</h3>
+                            <p class="text-sm text-gray-500 mt-1">需登录 (后台使用)</p>
+                        </div>
+                        <span class="px-3 py-1 bg-red-100 text-red-700 text-xs font-semibold rounded">DELETE</span>
+                    </div>
+                    <code class="block text-sm bg-gray-100 p-3 rounded mt-2 text-gray-700">/api/replies/{reply_id}</code>
+                </div>
+                <div class="p-6 hover:bg-gray-50 transition-colors">
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <h3 class="font-semibold text-gray-800">切换回复启用状态</h3>
+                            <p class="text-sm text-gray-500 mt-1">需登录 (后台使用)</p>
+                        </div>
+                        <span class="px-3 py-1 bg-orange-100 text-orange-700 text-xs font-semibold rounded">PUT</span>
+                    </div>
+                    <code class="block text-sm bg-gray-100 p-3 rounded mt-2 text-gray-700">/api/replies/{reply_id}/toggle</code>
+                </div>
+            </div>
+        </div>
+
+        <!-- 其他接口 -->
+        <div class="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
+            <div class="px-6 py-4 bg-gradient-to-r from-indigo-50 to-indigo-100 border-b border-indigo-200">
+                <h2 class="text-lg font-bold text-indigo-900 flex items-center">
+                    <i class="fas fa-cogs mr-2"></i>其他接口
+                </h2>
+            </div>
+            <div class="divide-y">
+                <div class="p-6 hover:bg-gray-50 transition-colors">
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <h3 class="font-semibold text-gray-800">获取用户位置信息</h3>
+                            <p class="text-sm text-gray-500 mt-1">无需登录 (客户端使用)</p>
+                        </div>
+                        <span class="px-3 py-1 bg-blue-100 text-blue-700 text-xs font-semibold rounded">GET/POST</span>
+                    </div>
+                    <code class="block text-sm bg-gray-100 p-3 rounded mt-2 text-gray-700">/api/get-location</code>
+                </div>
+                <div class="p-6 hover:bg-gray-50 transition-colors">
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <h3 class="font-semibold text-gray-800">获取头像</h3>
+                            <p class="text-sm text-gray-500 mt-1">无需登录 (前端使用)</p>
+                        </div>
+                        <span class="px-3 py-1 bg-blue-100 text-blue-700 text-xs font-semibold rounded">GET</span>
+                    </div>
+                    <code class="block text-sm bg-gray-100 p-3 rounded mt-2 text-gray-700">/api/avatar/{avatar_type}?size=36</code>
+                </div>
+                <div class="p-6 hover:bg-gray-50 transition-colors">
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <h3 class="font-semibold text-gray-800">获取系统信息</h3>
+                            <p class="text-sm text-gray-500 mt-1">需登录 (后台使用)</p>
+                        </div>
+                        <span class="px-3 py-1 bg-blue-100 text-blue-700 text-xs font-semibold rounded">GET</span>
+                    </div>
+                    <code class="block text-sm bg-gray-100 p-3 rounded mt-2 text-gray-700">/api/system-info</code>
+                </div>
+                <div class="p-6 hover:bg-gray-50 transition-colors">
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <h3 class="font-semibold text-gray-800">微信验证</h3>
+                            <p class="text-sm text-gray-500 mt-1">无需登录 (微信平台使用)</p>
+                        </div>
+                        <span class="px-3 py-1 bg-blue-100 text-blue-700 text-xs font-semibold rounded">GET</span>
+                    </div>
+                    <code class="block text-sm bg-gray-100 p-3 rounded mt-2 text-gray-700">/verify</code>
+                </div>
+                <div class="p-6 hover:bg-gray-50 transition-colors">
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <h3 class="font-semibold text-gray-800">获取微信AccessToken</h3>
+                            <p class="text-sm text-gray-500 mt-1">需登录 (后台使用)</p>
+                        </div>
+                        <span class="px-3 py-1 bg-blue-100 text-blue-700 text-xs font-semibold rounded">GET</span>
+                    </div>
+                    <code class="block text-sm bg-gray-100 p-3 rounded mt-2 text-gray-700">/api/wechat/access-token</code>
+                </div>
+            </div>
+        </div>
+
+        <!-- API使用说明 -->
+        <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
+            <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
+                <i class="fas fa-book mr-2 text-blue-500"></i>API使用说明
+            </h3>
+            <div class="space-y-4 text-sm text-gray-600">
+                <div>
+                    <p class="font-semibold text-gray-800 mb-1">📌 请求方式</p>
+                    <p>支持 GET、POST、PUT、DELETE 等HTTP方法。部分接口支持GET和POST两种方式。</p>
+                </div>
+                <div>
+                    <p class="font-semibold text-gray-800 mb-1">🔐 认证要求</p>
+                    <p>需要登录的接口会返回302重定向到登录页面。客户端接口无需登录，可直接调用。</p>
+                </div>
+                <div>
+                    <p class="font-semibold text-gray-800 mb-1">💾 请求格式</p>
+                    <p>POST/PUT 请求应使用 JSON 格式的请求体，Content-Type 设置为 application/json。</p>
+                </div>
+                <div>
+                    <p class="font-semibold text-gray-800 mb-1">📦 响应格式</p>
+                    <p>所有接口返回 JSON 格式的响应，通常包含 success 和 message 字段。</p>
+                </div>
+                <div>
+                    <p class="font-semibold text-gray-800 mb-1">⚡ 缓存控制</p>
+                    <p>大多数 API 响应包含 Cache-Control: no-store 等缓存控制头，确保获取最新数据。</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

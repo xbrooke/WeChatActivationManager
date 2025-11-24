@@ -1,0 +1,11 @@
+{
+  "keywords": [
+    "测试"
+  ],
+  "config": {
+    "isVIP": false,
+    "sendMessage": true,
+    "sendReply": false
+  },
+  "updatedAt": "2025-11-13T12:51:02.182879"
+}

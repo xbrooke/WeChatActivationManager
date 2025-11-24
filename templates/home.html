@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+
+{% block title %}首页 - API服务中心{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50 flex flex-col">
+    <!-- 主区域 -->
+    <div class="flex-1 flex flex-col px-4 py-12 max-w-6xl mx-auto w-full fade-in">
+        <!-- 顶部操作区 -->
+        <div class="flex flex-col md:flex-row justify-between items-center mb-10">
+            <div class="flex items-center mb-4 md:mb-0">
+                <div class="bg-blue-600 text-white p-3 rounded-lg mr-3">
+                    <i class="fas fa-server text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-semibold text-gray-800">API 服务中心</h1>
+                    <p class="text-sm text-gray-500">版本: v1.0.0</p>
+                </div>
+            </div>
+            
+            <div class="flex">
+                <a href="/login" class="px-5 py-2.5 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition-all duration-200 font-medium flex items-center">
+                    <i class="fas fa-sign-in-alt mr-2"></i>管理员登录
+                </a>
+            </div>
+        </div>
+        
+        <!-- API接口信息 -->
+        <div class="bg-white rounded-xl shadow-sm p-6 mb-8">
+            <h2 class="text-lg font-medium text-gray-800 mb-6 flex items-center">
+                <i class="fas fa-network-wired text-blue-500 mr-2"></i>接口列表
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- API卡片 -->
+                <div class="field-box card-hover">
+                    <div class="flex items-center mb-3 gap-2">
+                        <span class="method-badge post">POST</span>
+                        <code class="api-path">/api/verify_code</code>
+                    </div>
+                    <p class="text-sm text-gray-600">验证并使用激活码</p>
+                </div>
+                
+                <div class="field-box card-hover">
+                    <div class="flex items-center mb-3 gap-2">
+                        <span class="method-badge post">POST</span>
+                        <code class="api-path">/api/use_activation_code</code>
+                    </div>
+                    <p class="text-sm text-gray-600">使用激活码</p>
+                </div>
+                
+                <div class="field-box card-hover">
+                    <div class="flex items-center mb-3 gap-2">
+                        <span class="method-badge post">POST</span>
+                        <code class="api-path">/wechat</code>
+                    </div>
+                    <p class="text-sm text-gray-600">处理微信消息</p>
+                </div>
+                
+                <div class="field-box card-hover">
+                    <div class="flex items-center mb-3 gap-2">
+                        <span class="method-badge get">GET</span>
+                        <code class="api-path">/verify</code>
+                    </div>
+                    <p class="text-sm text-gray-600">系统状态验证</p>
+                </div>
+            </div>
+            
+            <!-- 微信API对接指南入口 -->
+            <div class="mt-6 field-box highlight">
+                <div class="flex items-start">
+                    <div class="bg-blue-100 p-3 rounded-full text-blue-600 mr-4 flex-shrink-0">
+                        <i class="fas fa-book text-xl"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-medium text-gray-800 mb-2">微信公众号API对接指南</h3>
+                        <p class="text-sm text-gray-600 mb-4">详细了解如何将系统与微信公众号进行对接，包括配置服务器URL、Token验证、IP白名单等步骤</p>
+                        <a href="/admin/wechat-api-guide" class="inline-flex items-center text-blue-600 hover:text-blue-800 transition-colors duration-200 font-medium">
+                            查看详细指南 <i class="fas fa-arrow-right ml-1"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 系统状态卡片 -->
+        <div class="bg-white rounded-xl shadow-sm p-6">
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="text-lg font-medium text-gray-800 flex items-center">
+                    <i class="fas fa-heartbeat text-green-500 mr-2"></i>系统状态
+                </h2>
+                <a href="/system-status" class="inline-flex items-center text-sm text-blue-600 hover:text-blue-800 transition-colors duration-200 font-medium">
+                    查看详细 <i class="fas fa-arrow-right ml-1"></i>
+                </a>
+            </div>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="field-box success">
+                    <div class="flex items-center gap-3">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-check-circle text-green-600 text-lg"></i>
+                        </div>
+                        <div>
+                            <p class="field-label">服务状态</p>
+                            <p class="field-value">运行中</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="field-box highlight">
+                    <div class="flex items-center gap-3">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-clock text-blue-600 text-lg"></i>
+                        </div>
+                        <div>
+                            <p class="field-label">响应时间</p>
+                            <p class="field-value">&lt;100ms</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="field-box">
+                    <div class="flex items-center gap-3">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-database text-purple-600 text-lg"></i>
+                        </div>
+                        <div>
+                            <p class="field-label">数据库</p>
+                            <p class="field-value">连接正常</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="field-box">
+                    <div class="flex items-center gap-3">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-cloud text-amber-600 text-lg"></i>
+                        </div>
+                        <div>
+                            <p class="field-label">API版本</p>
+                            <p class="field-value">v1.0.0</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 页脚 -->
+    <footer class="bg-white py-4 border-t border-gray-200 mt-auto">
+        <div class="container mx-auto text-center text-gray-500 text-sm">
+            <p>© 2025 API服务中心 - 版权所有</p>
+        </div>
+    </footer>
+</div>
+
+<script>
+// 记录访问信息
+(function() {
+    // 从 URL 获取 openid（如果有）
+    const urlParams = new URLSearchParams(window.location.search);
+    const openid = urlParams.get('id');
+    
+    if (openid) {
+        // 调用 API 记录访问
+        fetch('/api/record-visit', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ openid: openid })
+        }).catch(error => console.debug('访问记录请求失败:', error));
+    }
+})();
+</script>
+{% endblock %}

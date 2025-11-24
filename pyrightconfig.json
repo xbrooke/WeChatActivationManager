@@ -1,0 +1,10 @@
+{
+  "_comment": "WeChat Activation Manager - Pyright 配置 | 项目地址: https://github.com/xbrooke/WeChatActivationManager.git | 开发者: 徐大兵 | 版本: 1.0.0 | 许可证: MIT",
+  "typeCheckingMode": "basic",
+  "reportOptionalMemberAccess": "warning",
+  "reportArgumentType": "warning",
+  "reportGeneralTypeIssues": "warning",
+  "reportAttributeAccessIssue": "warning",
+  "reportReturnType": "warning",
+  "reportUnusedExcept": "warning"
+}

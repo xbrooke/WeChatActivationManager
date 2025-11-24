@@ -1,0 +1,227 @@
+{% extends "admin/layout.html" %}
+
+{% block page_title %}微信API指南{% endblock %}
+
+{% block page_content %}
+<div class="space-y-6">
+    <!-- 页面标题 -->
+    <div class="fade-in">
+        <h1 class="text-2xl font-bold text-gray-800">微信API指南</h1>
+        <p class="text-gray-500 mt-1">完整的微信集成文档和配置指南</p>
+    </div>
+    
+    <!-- 快速导航 -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 fade-in">
+        <div class="p-4 bg-blue-50 border border-blue-200 rounded-lg hover:shadow-md transition-all cursor-pointer">
+            <h4 class="font-semibold text-blue-900">基础配置</h4>
+            <p class="text-sm text-blue-700 mt-1">获取 AppID 和配置 URL</p>
+        </div>
+        <div class="p-4 bg-green-50 border border-green-200 rounded-lg hover:shadow-md transition-all cursor-pointer">
+            <h4 class="font-semibold text-green-900">消息处理</h4>
+            <p class="text-sm text-green-700 mt-1">实现消息接收和回复</p>
+        </div>
+        <div class="p-4 bg-purple-50 border border-purple-200 rounded-lg hover:shadow-md transition-all cursor-pointer">
+            <h4 class="font-semibold text-purple-900">高级功能</h4>
+            <p class="text-sm text-purple-700 mt-1">菜单、自定义回复等功能</p>
+        </div>
+    </div>
+    
+    <!-- 基础配置 -->
+    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 fade-in">
+        <h3 class="font-semibold mb-4 text-gray-800 flex items-center">
+            <i class="fas fa-cog mr-2 text-blue-500"></i>基础配置
+        </h3>
+        
+        <div class="space-y-4">
+            <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
+                <h4 class="font-medium text-blue-900 mb-2">第1步：获取微信公众号凭证</h4>
+                <ol class="text-sm text-blue-800 space-y-2 ml-4 list-decimal">
+                    <li>登录 <a href="https://mp.weixin.qq.com/" target="_blank" class="underline hover:no-underline">微信公众平台</a></li>
+                    <li>进入 "设置与开发" → "基本设置"</li>
+                    <li>复制 AppID 和 AppSecret</li>
+                    <li>在系统设置中配置这两个值</li>
+                </ol>
+            </div>
+            
+            <div class="bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded">
+                <h4 class="font-medium text-yellow-900 mb-2">第2步：配置环境变量</h4>
+                <p class="text-sm text-yellow-800 mb-2">在项目根目录的 <code class="bg-white px-1 rounded">`.env`</code> 文件中配置：</p>
+                <div class="bg-white p-3 rounded border border-yellow-200 font-mono text-xs space-y-1">
+                    <div><span class="text-blue-600">WECHAT_TOKEN=</span><span class="text-gray-600">你的Token值 (建议使用强随机值)</span></div>
+                    <div><span class="text-blue-600">SERVER_IP=</span><span class="text-gray-600">你的服务器外网IP或域名 (留空则自动获取)</span></div>
+                </div>
+                <p class="text-sm text-yellow-700 mt-2">⚠️ 重要：Token必须与下一步微信公众号后台设置的Token相同</p>
+            </div>
+            
+            <div class="bg-orange-50 border-l-4 border-orange-500 p-4 rounded">
+                <h4 class="font-medium text-orange-900 mb-2">第3步：微信公众号后台配置</h4>
+                <p class="text-sm text-orange-800 mb-2">登录 <a href="https://mp.weixin.qq.com/" target="_blank" class="underline text-blue-600">微信公众平台</a>，进入 "设置与开发" → "基本设置"</p>
+                <div class="bg-white p-3 rounded border border-orange-200 font-mono text-xs space-y-1">
+                    <div><strong>服务器地址(URL):</strong> <span class="text-blue-600">http://你的IP:5000/wechat</span></div>
+                    <div><strong>令牌(Token):</strong> <span class="text-blue-600">[与.env中WECHAT_TOKEN相同]</span></div>
+                    <div><strong>消息加密方式:</strong> <span class="text-blue-600">明文模式 (开发/测试)</span></div>
+                </div>
+                <p class="text-sm text-orange-700 mt-2">✓ 点击"提交"按钮，系统会自动验证配置</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- API 文档 -->
+    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 fade-in">
+        <h3 class="font-semibold mb-4 text-gray-800 flex items-center">
+            <i class="fas fa-book mr-2 text-green-500"></i>API 端点
+        </h3>
+        
+        <div class="space-y-4">
+            <!-- 消息接收 -->
+            <div class="border-b pb-4">
+                <div class="flex items-center justify-between mb-2">
+                    <h4 class="font-medium text-gray-900">消息接收</h4>
+                    <span class="px-2 py-1 bg-green-100 text-green-800 text-xs rounded">GET/POST</span>
+                </div>
+                <p class="text-sm text-gray-600 mb-2">端点: <code class="bg-gray-100 px-2 py-1 rounded">POST /wechat</code></p>
+                <p class="text-sm text-gray-600">用于接收并处理微信发送的消息，包括文本、图片、事件等</p>
+            </div>
+            
+            <!-- 生成高级激活码 -->
+            <div class="border-b pb-4">
+                <div class="flex items-center justify-between mb-2">
+                    <h4 class="font-medium text-gray-900">生成高级激活码</h4>
+                    <span class="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded">POST</span>
+                </div>
+                <p class="text-sm text-gray-600 mb-2">端点: <code class="bg-gray-100 px-2 py-1 rounded">POST /api/codes/generate</code></p>
+                <p class="text-sm text-gray-600 mb-2">生成高级激活码，支持多种格式和参数自定义</p>
+                <div class="bg-gray-50 p-3 rounded mt-2 text-xs">
+                    <p class="font-medium text-gray-700 mb-1">请求参数:</p>
+                    <p class="text-gray-600">• openid (string): 用户标识</p>
+                    <p class="text-gray-600">• length (int): 激活码长度 (4-32, 默认8)</p>
+                    <p class="text-gray-600">• format_type (string): 格式 (ALPHANUMERIC/NUMERIC/ALPHA)</p>
+                    <p class="text-gray-600">• is_vip (boolean): 是否为VIP码</p>
+                </div>
+            </div>
+            
+            <!-- 验证激活码 -->
+            <div class="border-b pb-4">
+                <div class="flex items-center justify-between mb-2">
+                    <h4 class="font-medium text-gray-900">验证和使用激活码</h4>
+                    <span class="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded">POST</span>
+                </div>
+                <p class="text-sm text-gray-600 mb-2">端点: <code class="bg-gray-100 px-2 py-1 rounded">POST /api/codes/verify</code></p>
+                <p class="text-sm text-gray-600 mb-2">验证激活码的有效性并标记为已使用</p>
+                <div class="bg-gray-50 p-3 rounded mt-2 text-xs">
+                    <p class="font-medium text-gray-700 mb-1">请求参数:</p>
+                    <p class="text-gray-600">• code (string): 要验证的激活码</p>
+                </div>
+            </div>
+            
+            <!-- 旧版激活码验证 -->
+            <div class="border-b pb-4">
+                <div class="flex items-center justify-between mb-2">
+                    <h4 class="font-medium text-gray-900">激活码验证 (旧版)</h4>
+                    <span class="px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded">POST</span>
+                </div>
+                <p class="text-sm text-gray-600 mb-2">端点: <code class="bg-gray-100 px-2 py-1 rounded">POST /api/verify-code</code></p>
+                <p class="text-sm text-gray-600">验证用户提供的激活码是否有效 (兼容旧版本)</p>
+            </div>
+            
+            <!-- 获取统计 -->
+            <div>
+                <div class="flex items-center justify-between mb-2">
+                    <h4 class="font-medium text-gray-900">获取统计数据</h4>
+                    <span class="px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded">GET</span>
+                </div>
+                <p class="text-sm text-gray-600 mb-2">端点: <code class="bg-gray-100 px-2 py-1 rounded">GET /api/statistics</code></p>
+                <p class="text-sm text-gray-600">获取系统当前的统计数据，如激活码总数、用户数等</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 常见问题 -->
+    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 fade-in">
+        <h3 class="font-semibold mb-4 text-gray-800 flex items-center">
+            <i class="fas fa-question-circle mr-2 text-orange-500"></i>常见问题
+        </h3>
+        
+        <div class="space-y-4">
+            <details class="border rounded-lg overflow-hidden">
+                <summary class="p-4 bg-gray-50 cursor-pointer font-medium hover:bg-gray-100 transition-colors">
+                    <i class="fas fa-chevron-right mr-2"></i>如何测试消息接收？
+                </summary>
+                <div class="p-4 bg-white border-t text-gray-600">
+                    <p>您可以通过微信公众平台的"开发者工具"中的"接口调试工具"进行测试。也可以向公众号发送消息进行真实测试。</p>
+                </div>
+            </details>
+            
+            <details class="border rounded-lg overflow-hidden">
+                <summary class="p-4 bg-gray-50 cursor-pointer font-medium hover:bg-gray-100 transition-colors">
+                    <i class="fas fa-chevron-right mr-2"></i>激活码过期后如何处理？
+                </summary>
+                <div class="p-4 bg-white border-t text-gray-600">
+                    <p>过期的激活码会自动标记为已过期状态。用户将无法使用这些激活码，管理员可以选择删除或重新生成新的激活码。</p>
+                </div>
+            </details>
+            
+            <details class="border rounded-lg overflow-hidden">
+                <summary class="p-4 bg-gray-50 cursor-pointer font-medium hover:bg-gray-100 transition-colors">
+                    <i class="fas fa-chevron-right mr-2"></i>如何实现自定义回复？
+                </summary>
+                <div class="p-4 bg-white border-t text-gray-600">
+                    <p>在本系统的"自定义回复"页面中添加关键词和对应的回复内容。系统会根据用户消息自动匹配并回复。支持精确匹配和包含匹配两种方式。</p>
+                </div>
+            </details>
+            
+            <details class="border rounded-lg overflow-hidden">
+                <summary class="p-4 bg-gray-50 cursor-pointer font-medium hover:bg-gray-100 transition-colors">
+                    <i class="fas fa-chevron-right mr-2"></i>如何处理消息加密？
+                </summary>
+                <div class="p-4 bg-white border-t text-gray-600">
+                    <p>本系统支持明文模式和兼容模式。建议在开发阶段使用明文模式便于调试，在生产环境使用加密模式保证安全。</p>
+                </div>
+            </details>
+        </div>
+    </div>
+    
+    <!-- 文档链接 -->
+    <div class="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-xl border border-blue-200 fade-in">
+        <h3 class="font-semibold mb-4 text-gray-800 flex items-center">
+            <i class="fas fa-external-link-alt mr-2 text-indigo-500"></i>有用的链接
+        </h3>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <a href="https://developers.weixin.qq.com/doc/offiaccount/Custom_Menus/Custom_menu_interface.html" target="_blank" class="p-3 bg-white rounded border border-blue-200 hover:shadow-md transition-all">
+                <div class="font-medium text-blue-600 flex items-center">
+                    <i class="fas fa-link mr-2"></i>微信菜单 API 文档
+                </div>
+                <p class="text-sm text-gray-600 mt-1">官方文档：自定义菜单接口</p>
+            </a>
+            
+            <a href="https://developers.weixin.qq.com/doc/offiaccount/Message_Management/Service_Center_messages.html" target="_blank" class="p-3 bg-white rounded border border-blue-200 hover:shadow-md transition-all">
+                <div class="font-medium text-blue-600 flex items-center">
+                    <i class="fas fa-link mr-2"></i>消息回复文档
+                </div>
+                <p class="text-sm text-gray-600 mt-1">官方文档：消息管理和回复</p>
+            </a>
+            
+            <a href="https://developers.weixin.qq.com/doc/offiaccount/OA_Web_Apps/JS-SDK.html" target="_blank" class="p-3 bg-white rounded border border-blue-200 hover:shadow-md transition-all">
+                <div class="font-medium text-blue-600 flex items-center">
+                    <i class="fas fa-link mr-2"></i>JS-SDK 文档
+                </div>
+                <p class="text-sm text-gray-600 mt-1">官方文档：前端集成</p>
+            </a>
+            
+            <a href="https://developers.weixin.qq.com/doc/offiaccount/Basic_Information/Get_the_WeChat_server_IP_address.html" target="_blank" class="p-3 bg-white rounded border border-blue-200 hover:shadow-md transition-all">
+                <div class="font-medium text-blue-600 flex items-center">
+                    <i class="fas fa-link mr-2"></i>服务器 IP 说明
+                </div>
+                <p class="text-sm text-gray-600 mt-1">官方文档：IP 白名单</p>
+            </a>
+        </div>
+    </div>
+</div>
+
+<style>
+details summary::-webkit-details-marker {
+    display: none;
+}
+</style>
+{% endblock %}

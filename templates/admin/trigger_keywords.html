@@ -1,0 +1,401 @@
+{% extends "admin/layout.html" %}
+
+{% block page_title %}自定义触发关键词{% endblock %}
+
+{% block page_content %}
+<div class="space-y-6" x-data="triggerKeywordData()" @load="init()" x-init="init()" >
+    <!-- 页面标题 -->
+    <div class="fade-in">
+        <h1 class="text-2xl font-bold text-gray-800">自定义触发关键词</h1>
+        <p class="text-gray-500 mt-1">配置自动生成激活码的触发关键词</p>
+    </div>
+    
+    <!-- 预设建议 -->
+    <div class="bg-blue-50 border border-blue-200 p-4 rounded-xl fade-in">
+        <div class="flex items-start gap-3">
+            <i class="fas fa-lightbulb text-blue-600 mt-1 flex-shrink-0"></i>
+            <div>
+                <h3 class="font-semibold text-blue-900 mb-2">💡 功能说明</h3>
+                <p class="text-sm text-blue-800 mb-2">
+                    系统会检测用户消息中的关键词组合，当消息同时包含所有设置的关键词时，自动为用户生成激活码并通过微信发送。
+                </p>
+                <p class="text-sm text-blue-700">
+                    <strong>例如：</strong>如果设置了"生成"和"激活码"两个关键词，用户发送"我要生成激活码"时，系统会自动执行。
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 触发关键词管理 -->
+    <div class="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100 fade-in">
+        <div class="p-6">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-lg font-semibold text-gray-800">激活码生成 - 触发关键词</h3>
+                <div class="flex items-center gap-4">
+                    <div class="text-sm text-gray-600">
+                        <span>已加载 </span><span x-text="keywords.length"></span><span> 个关键词</span>
+                    </div>
+                    <button 
+                    @click="showAddKeywordModal = true"
+                    class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-200 flex items-center text-sm">
+                    <i class="fas fa-plus mr-2"></i>添加关键词
+                </button>
+                </div>
+            </div>
+            
+            <!-- 已配置的关键词列表 -->
+            <template x-if="keywords.length > 0">
+                <div class="space-y-3">
+                    <div class="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-lg border border-blue-200">
+                        <p class="text-sm text-gray-700 font-medium mb-3">📌 当前触发规则：消息同时包含以下所有关键词时自动执行</p>
+                        <div class="flex flex-wrap gap-2">
+                            <template x-for="(keyword, index) in keywords" :key="index">
+                                <div class="flex items-center gap-2 bg-white px-3 py-2 rounded-lg border border-blue-200">
+                                    <span class="font-semibold text-blue-600" x-text="keyword"></span>
+                                    <button 
+                                        @click="removeKeyword(index)"
+                                        class="text-red-500 hover:text-red-700 transition-colors text-sm"
+                                        title="删除">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                    
+                    <!-- 使用示例 -->
+                    <div class="bg-green-50 p-4 rounded-lg border border-green-200 mt-4">
+                        <p class="text-sm font-medium text-gray-700 mb-3">✅ 触发示例</p>
+                        <div class="space-y-2">
+                            <template x-for="(example, index) in generateExamples()" :key="index">
+                                <div class="text-sm text-gray-600">
+                                    <span class="text-green-700 font-medium">✓</span> 
+                                    <span x-text="example"></span>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </div>
+            </template>
+            
+            <!-- 空状态 -->
+            <template x-if="keywords.length === 0">
+                <div class="p-8 text-center border-2 border-dashed border-gray-300 rounded-lg">
+                    <i class="fas fa-inbox text-4xl text-gray-300 mb-3"></i>
+                    <p class="text-gray-500 mb-4">未设置任何触发关键词</p>
+                    <button 
+                        @click="showAddKeywordModal = true"
+                        class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-200 inline-flex items-center">
+                        <i class="fas fa-plus mr-2"></i>添加关键词
+                    </button>
+                </div>
+            </template>
+        </div>
+    </div>
+    
+    <!-- 响应配置 -->
+    <div class="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100 fade-in">
+        <div class="p-6">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">触发响应配置</h3>
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input 
+                            type="checkbox" 
+                            x-model="config.sendMessage"
+                            class="h-4 w-4 text-blue-600 rounded border-gray-300">
+                        <span class="text-sm font-medium text-gray-700">自动发送微信消息给用户</span>
+                    </label>
+                    <p class="text-xs text-gray-500 mt-2 ml-6">启用后，系统会通过微信API主动发送激活码给用户</p>
+                </div>
+                
+                <div>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input 
+                            type="checkbox" 
+                            x-model="config.sendReply"
+                            class="h-4 w-4 text-blue-600 rounded border-gray-300">
+                        <span class="text-sm font-medium text-gray-700">在微信聊天中回复确认消息</span>
+                    </label>
+                    <p class="text-xs text-gray-500 mt-2 ml-6">启用后，用户会在聊天框中收到"激活码已生成"的确认</p>
+                </div>
+                
+                <div>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input 
+                            type="checkbox" 
+                            x-model="config.isVIP"
+                            class="h-4 w-4 text-blue-600 rounded border-gray-300">
+                        <span class="text-sm font-medium text-gray-700">生成VIP激活码</span>
+                    </label>
+                    <p class="text-xs text-gray-500 mt-2 ml-6">启用后，生成的激活码将是VIP类型，有效期更长</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 预览信息（可编辑） -->
+    <div class="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100 fade-in">
+        <div class="p-6">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">激活码发送预览（可自定义编辑）</h3>
+            
+            <div class="space-y-4">
+                <!-- 微信回复预览 -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">📱 微信聊天回复（立即显示）</label>
+                    <textarea 
+                        x-model="preview.chatReply"
+                        rows="3"
+                        class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                        placeholder="请输入微信聊天中的回复消息"></textarea>
+                    <p class="text-xs text-gray-500 mt-2">💡 这是用户在聊天框中立即看到的消息</p>
+                </div>
+                
+                <!-- 微信消息预览 -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">📨 微信主动消息（5秒内发送）</label>
+                    <textarea 
+                        x-model="preview.pushMessage"
+                        rows="5"
+                        class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                        placeholder="请输入通过微信API发送的主动消息"></textarea>
+                    <p class="text-xs text-gray-500 mt-2">💡 这是系统主动发送给用户的消息，支持多行文本</p>
+                </div>
+            </div>
+            
+            <!-- 预览效果 -->
+            <div class="mt-6 pt-6 border-t border-gray-200">
+                <h4 class="text-sm font-semibold text-gray-700 mb-3">预览效果</h4>
+                <div class="space-y-4">
+                    <div>
+                        <p class="text-xs font-medium text-gray-600 mb-2">聊天回复预览：</p>
+                        <div class="bg-gradient-to-b from-green-50 to-green-100 p-4 rounded-lg border border-green-200">
+                            <div class="text-sm text-gray-800 leading-relaxed whitespace-pre-wrap" x-text="preview.chatReply || '（未设置）'"></div>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <p class="text-xs font-medium text-gray-600 mb-2">主动消息预览：</p>
+                        <div class="bg-gradient-to-b from-blue-50 to-blue-100 p-4 rounded-lg border border-blue-200">
+                            <div class="text-sm text-gray-800 leading-relaxed whitespace-pre-wrap" x-text="preview.pushMessage || '（未设置）'"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 保存按钮 -->
+    <div class="flex justify-end gap-3">
+        <button 
+            @click="resetForm()"
+            class="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-all duration-200">
+            重置
+        </button>
+        <button 
+            @click="saveConfig()"
+            class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all duration-200 flex items-center">
+            <i class="fas fa-save mr-2"></i>保存配置
+        </button>
+    </div>
+    
+    <!-- 添加关键词弹窗 -->
+    <template x-if="showAddKeywordModal">
+        <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50" @click.self="showAddKeywordModal = false">
+            <div class="bg-white rounded-xl shadow-lg p-6 w-full max-w-md">
+                <h3 class="text-lg font-semibold mb-4 text-gray-800">添加触发关键词</h3>
+                
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">关键词</label>
+                        <input 
+                            type="text" 
+                            x-model="newKeyword"
+                            placeholder="输入关键词（如：生成、激活码等）"
+                            @keydown.enter="addKeyword()"
+                            class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                        />
+                        <p class="text-xs text-gray-500 mt-2">💡 提示：消息中同时包含所有关键词时将触发</p>
+                    </div>
+                    
+                    <div class="pt-4 flex justify-end space-x-3">
+                        <button 
+                            @click="showAddKeywordModal = false"
+                            class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-all duration-200">
+                            取消
+                        </button>
+                        <button 
+                            @click="addKeyword()"
+                            class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-200">
+                            添加
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
+</div>
+
+<script>
+function triggerKeywordData() {
+    return {
+        keywords: [],  // 一开始为空，由API加载
+        newKeyword: '',
+        showAddKeywordModal: false,
+        preview: {
+            chatReply: '✓ 您的激活码已生成，详情请查看报文消息。',
+            pushMessage: '🎉 您的激活码已生成\n\n🎯 激活码: XXXXXXXX\n\n\u2705 激活码已为您生成，即可使用。\n🔐 为了您的账户安全，请不要分享给他人。'
+        },
+        config: {
+            sendMessage: true,
+            sendReply: true,
+            isVIP: false
+        },
+        defaultReplies: {
+            activationCodeReply: '🎉 您的激活码已生成\n\n🎯 激活码: XXXXXXXX\n\n✅ 激活码已为您生成，即可使用。\n🔐 为了您的账户安全，请不要分享给他人。',
+            myCodesReply: '📋 你的激活码历史\n\n',
+            activeCodeStatusReply: '🟢 你当前有有效的激活码\n\n激活码：{code}\n创建时间：{created_at}\n过期时间：{expires_at}\n状态：未使用\n\n⚠️ 请妥善保管你的激活码！',
+            noCodeStatusReply: '🔴 你没有有效的激活码。发送"激活码"获取新的激活码。',
+            helpReply: '📋 你好,欢迎使用我们的激活码系统！\n\n❔ 常见问题：\n1. 如何获取激活码？\n   发送"申请激活码"或"我要激活码"即可自动获取\n\n2. 激活码有效期多长？\n   一般是24小时，请及时使用\n\n3. 激活码过期了怎办？\n   请重新发送"申请激活码"获取新的\n\n4. 如何确认激活码是否有效？\n   直接发送激活码给我，我会立即验证\n\n5. 如何查看我的激活码历史？\n   发送"我的激活码"或"激活码历史"查看\n\n💡 更多功能请发送"菜单"查看。',
+            menuReply: '🏧 功能菜单\n\n📱 激活码相关：\n• 激活码 - 获取新的激活码\n• 我的激活码 - 查看激活码历史记录\n• 激活码状态 - 查看当前激活码状态\n• [直接输入激活码] - 立即使用激活码\n\n📋 常用功能：\n• 帮助 - 查看完整功能使用说明\n• 菜单 - 查看所有可用功能\n\n💡 使用提示：\n直接发送以上关键词即可使用对应功能！',
+            defaultReply: '❌ 抱歉,我未能理解您发送的内容：\"{content}\"\n\n✨ 推荐使用这些功能哦：\n📌 发送「激活码」→ 获取新激活码\n📌 发送「菜单」→ 查看所有可用功能\n📌 发送「帮助」→ 获取详细使用说明\n\n💡 直接发送激活码，就能立即使用啦～\n\n有任何疑问，发送「联系我」就能获取支持哦～',
+            errorReply: '⚠️ 出错了,请稍后重试。'
+        },
+        
+        addKeyword() {
+            if (!this.newKeyword.trim()) {
+                window.showToast('请输入关键词', 'error');
+                return;
+            }
+            
+            if (this.keywords.includes(this.newKeyword.trim())) {
+                window.showToast('此关键词已存在', 'error');
+                return;
+            }
+            
+            this.keywords.push(this.newKeyword.trim());
+            this.newKeyword = '';
+            this.showAddKeywordModal = false;
+            window.showToast('关键词已添加', 'success');
+        },
+        
+        removeKeyword(index) {
+            if (confirm('确定要删除此关键词吗？')) {
+                this.keywords.splice(index, 1);
+                window.showToast('关键词已删除', 'success');
+            }
+        },
+        
+        generateExamples() {
+            if (this.keywords.length === 0) return [];
+            
+            const examples = [];
+            // 生成几个包含所有关键词的例子
+            if (this.keywords.length === 1) {
+                examples.push(`用户发送"${this.keywords[0]}"时触发`);
+                examples.push(`用户发送"我要${this.keywords[0]}"时触发`);
+                examples.push(`用户发送"请帮我${this.keywords[0]}"时触发`);
+            } else if (this.keywords.length === 2) {
+                examples.push(`用户发送"${this.keywords[0]}${this.keywords[1]}"时触发`);
+                examples.push(`用户发送"我要${this.keywords[0]}${this.keywords[1]}"时触发`);
+                examples.push(`用户发送"请${this.keywords[0]}一个${this.keywords[1]}"时触发`);
+                examples.push(`用户发送"帮我${this.keywords[0]}个${this.keywords[1]}"时触发`);
+            } else {
+                const all = this.keywords.join('');
+                examples.push(`用户消息中同时包含 ${this.keywords.map(k => `"${k}"`).join(', ')} 时触发`);
+                examples.push(`用户发送"${all}"时触发`);
+                examples.push(`用户发送"我要${all}"时触发`);
+            }
+            
+            return examples.slice(0, 3);
+        },
+        
+        async saveConfig() {
+            try {
+                const response = await fetch('/api/trigger-keywords', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        keywords: this.keywords,
+                        config: this.config,
+                        preview: this.preview
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    window.showToast('配置已保存', 'success');
+                } else {
+                    window.showToast(result.message || '保存失败', 'error');
+                }
+            } catch (error) {
+                console.error('保存失败:', error);
+                window.showToast('保存失败，请重试', 'error');
+            }
+        },
+        
+        resetForm() {
+            this.keywords = [];
+            this.preview = {
+                chatReply: '✓ 您的激活码已生成，详情请查看报文消息。',
+                pushMessage: '🎉 您的激活码已生成\n\n🎯 激活码: XXXXXXXX\n\n✅ 激活码已为您生成，即可使用。\n🔐 为了您的账户安全，请不要分享给他人。'
+            };
+            this.config = {
+                sendMessage: true,
+                sendReply: true,
+                isVIP: false
+            };
+            this.defaultReplies = {
+                activationCodeReply: '🎉 您的激活码已生成\n\n🎯 激活码: XXXXXXXX\n\n✅ 激活码已为您生成，即可使用。\n🔐 为了您的账户安全，请不要分享给他人。',
+                myCodesReply: '📋 你的激活码历史\n\n',
+                activeCodeStatusReply: '🟢 你当前有有效的激活码\n\n激活码：{code}\n创建时间：{created_at}\n过期时间：{expires_at}\n状态：未使用\n\n⚠️ 请妥善保管你的激活码！',
+                noCodeStatusReply: '🔴 你没有有效的激活码。发送"激活码"获取新的激活码。',
+                helpReply: '📋 你好,欢迎使用我们的激活码系统！\n\n❔ 常见问题：\n1. 如何获取激活码？\n   发送"申请激活码"或"我要激活码"即可自动获取\n\n2. 激活码有效期多长？\n   一般是24小时，请及时使用\n\n3. 激活码过期了怎办？\n   请重新发送"申请激活码"获取新的\n\n4. 如何确认激活码是否有效？\n   直接发送激活码给我，我会立即验证\n\n5. 如何查看我的激活码历史？\n   发送"我的激活码"或"激活码历史"查看\n\n💡 更多功能请发送"菜单"查看。',
+                menuReply: '🏧 功能菜单\n\n📱 激活码相关：\n• 激活码 - 获取新的激活码\n• 我的激活码 - 查看激活码历史记录\n• 激活码状态 - 查看当前激活码状态\n• [直接输入激活码] - 立即使用激活码\n\n📋 常用功能：\n• 帮助 - 查看完整功能使用说明\n• 菜单 - 查看所有可用功能\n\n💡 使用提示：\n直接发送以上关键词即可使用对应功能！',
+                defaultReply: '❌ 抱歉,我未能理解您发送的内容：\"{content}\"\n\n✨ 推荐使用这些功能哦：\n📌 发送「激活码」→ 获取新激活码\n📌 发送「菜单」→ 查看所有可用功能\n📌 发送「帮助」→ 获取详细使用说明\n\n💡 直接发送激活码，就能立即使用啦～\n\n有任何疑问，发送「联系我」就能获取支持哦～',
+                errorReply: '⚠️ 出错了,请稍后重试。'
+            };
+            this.loadConfig();
+            window.showToast('已重新加载配置', 'success');
+        },
+        
+        async loadConfig() {
+            try {
+                console.log('开始加载襍发关键词...');
+                const response = await fetch('/api/trigger-keywords');
+                console.log('响应状态:', response.status);
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    console.log('加载到的配置:', result);
+                    
+                    // 直接赋值而不是检查
+                    if (result.keywords) {
+                        this.keywords = Array.isArray(result.keywords) ? result.keywords : [];
+                    }
+                    if (result.config) {
+                        this.config = { ...this.config, ...result.config };
+                    }
+                    if (result.preview) {
+                        this.preview = { ...this.preview, ...result.preview };
+                    }
+                    console.log('最终状态 - keywords:', this.keywords, 'preview:', this.preview);
+                } else {
+                    console.error('响应不是OK:', response.statusText);
+                }
+            } catch (error) {
+                console.error('加载配置失败:', error);
+            }
+        },
+        
+        init() {
+            console.log('init() 方法已调用');
+            // 使用下一个渲染周期执行，确保 DOM 已準备
+            setTimeout(() => this.loadConfig(), 0);
+        }
+    }
+}
+</script>
+{% endblock %}
